@@ -83,6 +83,13 @@
     <div v-else class="loading-center">
       <p class="empty-text">강의 정보를 불러오지 못했습니다.</p>
     </div>
+
+    <EnrollSuccessModal
+      :visible="showSuccessModal"
+      :course-title="course?.title || ''"
+      @close="showSuccessModal = false"
+      @go-to-my-courses="goToMyCourses"
+    />
   </div>
 </template>
 
@@ -91,6 +98,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import DifficultyLevel from '@/components/DifficultyLevel.vue'
+import EnrollSuccessModal from '@/components/EnrollSuccessModal.vue'
 import { useCourseStore } from '@/store/course.js'
 import { enrollmentApi } from '@/api/enrollment.js'
 import { useAuthStore } from '@/store/auth.js'
@@ -103,6 +111,7 @@ const auth = useAuthStore()
 const enrolling = ref(false)
 const enrollError = ref('')
 const enrollmentStatus = ref('NONE') // NONE | PENDING | ACTIVE
+const showSuccessModal = ref(false)
 
 const course = computed(() => courseStore.selectedCourse)
 const loading = computed(() => courseStore.loading)
@@ -244,12 +253,18 @@ async function handlePrimaryAction() {
   try {
     await enrollmentApi.enroll(course.value.id)
     enrollmentStatus.value = 'PENDING'
+    showSuccessModal.value = true
   } catch (e) {
     console.error('[CourseDetail] enroll failed:', e)
     enrollError.value = e.response?.data?.message || '수강 신청에 실패했습니다.'
   } finally {
     enrolling.value = false
   }
+}
+
+function goToMyCourses() {
+  showSuccessModal.value = false
+  router.push('/enrollments')
 }
 
 onMounted(async () => {
