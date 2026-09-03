@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 public class EnrollmentDto {
@@ -80,6 +81,36 @@ public class EnrollmentDto {
     public static class EnrollmentHistoryResponse {
         private Long userId;
         private List<Long> activeCourseIds;
+    }
+
+    // HR 승인 화면용 신청 정보
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class AdminEnrollmentResponse {
+        private Long enrollmentId;
+        private Long userId;
+        private String userName;
+        private String userEmail;
+        private Long courseId;
+        private String courseTitle;
+        private String courseCategory;
+        private BigDecimal price;
+        private Enrollment.Status status;
+        private LocalDateTime createdAt;
+    }
+
+    // HR 승인 및 결제 결과
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ApprovalResponse {
+        private Long enrollmentId;
+        private Long paymentId;
+        private String paymentStatus;
+        private Enrollment.Status enrollmentStatus;
     }
 
     // 공통 API 응답 래퍼

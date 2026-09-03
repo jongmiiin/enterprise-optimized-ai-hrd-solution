@@ -1,0 +1,14 @@
+// Maven Central 429(rate limit) 회피용 미러 설정
+// Google이 운영하는 Maven Central 전체 미러를 우선 사용 (레이트리밋 없음)
+allprojects {
+    buildscript {
+        repositories {
+            maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }
+            mavenCentral()
+        }
+    }
+    repositories {
+        maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }
+        mavenCentral()
+    }
+}

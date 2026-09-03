@@ -7,11 +7,18 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<EnrollmentDto.ApiResponse<Void>> handleResponseStatus(ResponseStatusException e) {
+        return ResponseEntity.status(e.getStatusCode())
+                .body(EnrollmentDto.ApiResponse.error(e.getReason()));
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<EnrollmentDto.ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {

@@ -250,6 +250,7 @@ services:
       - JWK_SET_URI=http://auth-server:9000/oauth2/jwks
       - ENROLLMENT_SERVICE_URL=http://enrollment-service:8083
       - COURSE_SERVICE_URL=http://course-service:8082
+      - USER_SERVICE_URL=http://user-service:8081
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       eureka-server:
@@ -261,6 +262,8 @@ services:
       enrollment-service:
         condition: service_started
       course-service:
+        condition: service_started
+      user-service:
         condition: service_started
     networks:
       - lecture-net
