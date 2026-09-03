@@ -7,9 +7,9 @@ export const authApi = {
   // OAuth2 Authorization Code -> Access Token 교환
   // CLIENT_SECRET_BASIC: Authorization 헤더에 client_id:client_secret을 Base64로 인코딩
   exchangeCode(code) {
-    const clientId = import.meta.env.VITE_CLIENT_ID
-    const clientSecret = import.meta.env.VITE_CLIENT_SECRET
-    const redirectUri = import.meta.env.VITE_REDIRECT_URI
+    const clientId = import.meta.env.VITE_CLIENT_ID || 'web-client'
+    const clientSecret = import.meta.env.VITE_CLIENT_SECRET || 'web-secret'
+    const redirectUri = import.meta.env.VITE_REDIRECT_URI || `${window.location.origin}/callback`
     const credentials = btoa(`${clientId}:${clientSecret}`)
 
     const body = new URLSearchParams({
