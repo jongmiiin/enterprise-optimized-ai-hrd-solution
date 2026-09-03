@@ -5,44 +5,96 @@
     <main class="page shell">
       <!-- 직원 화면 -->
       <template v-if="!isInstructor">
-        <div class="profile-card fade-in-up">
-          <div class="profile-avatar">{{ auth.user?.name?.charAt(0) || '?' }}</div>
-          <div class="profile-info">
-            <h2 class="profile-name">{{ auth.user?.name || '사용자' }}</h2>
-            <p class="profile-email">{{ auth.user?.email || '-' }}</p>
-            <span class="badge badge-indigo">직원</span>
+        <section class="growth-hero fade-in-up">
+          <div class="growth-copy">
+            <p class="growth-eyebrow">AI-POWERED LEARNING PATH</p>
+            <h1><strong>{{ auth.user?.name || '사용자' }}</strong>님,<br>다음 성장을 준비해 볼까요?</h1>
+            <p>현재 역량을 바탕으로 부족한 부분을 채우고, 직무 전문성을 높이는 학습을 추천해 드려요.</p>
+          </div>
+
+          <div class="competency-panel" aria-label="AI 핵심 역량">
+            <div class="competency-heading">
+              <div>
+                <span>CORE COMPETENCY</span>
+                <h2>나의 AI 핵심 역량</h2>
+              </div>
+              <small>5점 만점</small>
+            </div>
+
+            <div class="radar-wrap">
+              <svg class="competency-radar" viewBox="0 0 420 330" role="img" aria-label="AI 핵심 역량 오각형 차트">
+                <g class="radar-grid">
+                  <polygon v-for="level in 5" :key="level" :points="radarGridPoints(level)" />
+                  <line v-for="point in radarOuterPoints" :key="`${point.x}-${point.y}`" x1="210" y1="160" :x2="point.x" :y2="point.y" />
+                </g>
+                <polygon v-if="hasCompetencyScore" class="radar-score" :points="radarScorePoints" />
+                <circle
+                  v-for="point in radarScoreDots"
+                  :key="point.key"
+                  class="radar-dot"
+                  :class="{ missing: point.score === null }"
+                  :cx="point.x"
+                  :cy="point.y"
+                  r="4"
+                />
+                <g
+                  v-for="point in radarLabelPoints"
+                  :key="`label-${point.key}`"
+                  class="radar-label"
+                  :transform="`translate(${point.x} ${point.y})`"
+                >
+                  <text text-anchor="middle" dominant-baseline="middle">{{ point.label }}</text>
+                  <text v-if="point.score !== null" class="radar-label-score" y="20" text-anchor="middle">{{ point.score }}점</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <div v-if="recommendLoading" class="loading-row">
+          <div v-for="i in 3" :key="i" class="skeleton-card">
+            <div class="skeleton-thumb"></div>
+            <div class="skeleton-body">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line"></div>
+            </div>
           </div>
         </div>
 
-        <section class="recommend-section">
-          <h3 class="section-title">추천 강의</h3>
-
-          <p v-if="recommendMessage" class="recommend-message">
-            {{ recommendMessage }}
-          </p>
-
-          <div v-if="recommendLoading" class="loading-row">
-            <div v-for="i in 3" :key="i" class="skeleton-card">
-              <div class="skeleton-thumb"></div>
-              <div class="skeleton-body">
-                <div class="skeleton-line short"></div>
-                <div class="skeleton-line"></div>
+        <template v-else>
+          <section class="learning-block fade-in">
+            <div class="learning-heading">
+              <div class="learning-icon score-icon">01</div>
+              <div>
+                <p>GROW BY SCORE</p>
+                <h2>점수별 학습</h2>
+                <span>보완이 필요한 핵심 역량을 우선으로 추천했어요.</span>
               </div>
             </div>
-          </div>
 
-          <div v-else-if="recommendations.length" class="recommend-grid fade-in">
-            <CourseCard v-for="c in recommendations" :key="c.id" :course="c" />
-          </div>
+            <div v-if="scoreRecommendations.length" class="recommend-grid">
+              <CourseCard v-for="c in scoreRecommendations" :key="`score-${c.id}`" :course="c" />
+            </div>
+            <p v-else class="empty-text">역량 점수가 등록되면 맞춤 강의를 추천해 드릴게요.</p>
+          </section>
 
-          <p v-else-if="recommendError" class="empty-text">
-            {{ recommendError }}
-          </p>
+          <section class="learning-block fade-in">
+            <div class="learning-heading">
+              <div class="learning-icon job-icon">02</div>
+              <div>
+                <p>GROW BY ROLE</p>
+                <h2>직무별 학습</h2>
+                <span>현재 직무와 연관성이 높은 과정을 모았어요.</span>
+              </div>
+            </div>
 
-          <p v-else class="empty-text">
-            아직 추천할 강의가 없습니다.
-          </p>
-        </section>
+            <div v-if="jobRecommendations.length" class="recommend-grid">
+              <CourseCard v-for="c in jobRecommendations" :key="`job-${c.id}`" :course="c" />
+            </div>
+            <p v-else-if="recommendError" class="empty-text">{{ recommendError }}</p>
+            <p v-else class="empty-text">직무 정보가 등록되면 관련 강의를 추천해 드릴게요.</p>
+          </section>
+        </template>
       </template>
 
       <!-- HR 화면: 교육 승인 관리 -->
@@ -182,10 +234,59 @@ const auth = useAuthStore()
 const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
 
 /* 직원용 */
-const recommendations = ref([])
+const scoreRecommendations = ref([])
+const jobRecommendations = ref([])
 const recommendLoading = ref(true)
 const recommendError = ref('')
-const recommendMessage = ref('')
+
+const competencyDefinitions = [
+  { key: 'aiLiteracy', label: 'AI 리터러시' },
+  { key: 'jobAiApplication', label: '직무별 AI 활용' },
+  { key: 'promptSkill', label: '프롬프트 활용' },
+  { key: 'dataLiteracy', label: '데이터 활용' },
+  { key: 'aiEthicsSecurity', label: 'AI 윤리·보안' }
+]
+const competencyScores = ref({})
+const competencies = computed(() => competencyDefinitions.map(item => ({
+  ...item,
+  score: normalizeCompetencyScore(competencyScores.value[item.key])
+})))
+const radarCenter = { x: 210, y: 160 }
+const radarRadius = 112
+const radarLabelRadius = 150
+const radarOuterPoints = computed(() => competencyDefinitions.map((_, index) => radarPoint(index, radarRadius)))
+const hasCompetencyScore = computed(() => competencies.value.some(item => item.score !== null))
+const radarScoreDots = computed(() => competencies.value.map((item, index) => ({
+  ...item,
+  ...radarPoint(index, item.score === null ? 0 : radarRadius * item.score / 5)
+})))
+const radarScorePoints = computed(() => radarScoreDots.value.map(point => `${point.x},${point.y}`).join(' '))
+const radarLabelPoints = computed(() => competencies.value.map((item, index) => ({
+  ...item,
+  ...radarPoint(index, radarLabelRadius)
+})))
+
+function normalizeCompetencyScore(value) {
+  if (value === null || value === undefined || value === '') return null
+  const score = Number(value)
+  return Number.isFinite(score) ? Math.min(5, Math.max(1, score)) : null
+}
+
+function radarPoint(index, radius) {
+  const angle = -Math.PI / 2 + index * (Math.PI * 2 / competencyDefinitions.length)
+  return {
+    x: Number((radarCenter.x + Math.cos(angle) * radius).toFixed(2)),
+    y: Number((radarCenter.y + Math.sin(angle) * radius).toFixed(2))
+  }
+}
+
+function radarGridPoints(level) {
+  const radius = radarRadius * level / 5
+  return competencyDefinitions.map((_, index) => {
+    const point = radarPoint(index, radius)
+    return `${point.x},${point.y}`
+  }).join(' ')
+}
 
 /* HR 승인 관리용 */
 const pendingRows = ref([])
@@ -300,20 +401,20 @@ async function loadStudentRecommendations() {
 
     const payload = res.data
 
-    if (Array.isArray(payload?.recommendedCourses)) {
-      recommendations.value = payload.recommendedCourses
-      recommendMessage.value = payload.message ?? ''
-    } else if (Array.isArray(payload?.data)) {
-      recommendations.value = payload.data
-      recommendMessage.value = payload.message ?? ''
-    } else if (Array.isArray(payload)) {
-      recommendations.value = payload
-      recommendMessage.value = ''
-    } else {
-      console.warn('[MyPage] unexpected recommendation response shape:', payload)
-      recommendations.value = []
-      recommendMessage.value = ''
-    }
+    const body = payload?.data && !Array.isArray(payload.data) ? payload.data : payload
+    const allCourses = Array.isArray(body?.recommendedCourses)
+      ? body.recommendedCourses
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload) ? payload : []
+
+    competencyScores.value = body?.competencies ?? body?.capabilities ?? auth.user?.competencies ?? {}
+    scoreRecommendations.value = Array.isArray(body?.scoreBasedCourses)
+      ? body.scoreBasedCourses
+      : allCourses.slice(0, 3)
+    jobRecommendations.value = Array.isArray(body?.jobBasedCourses)
+      ? body.jobBasedCourses
+      : allCourses.slice(3)
   } catch (error) {
     console.error('[MyPage] failed to load recommendations:', error)
     recommendError.value = '현재 추천 강의를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
@@ -421,47 +522,122 @@ onMounted(async () => {
   font-size: 12px;
 }
 
-/* 직원 프로필 카드 */
-.profile-card {
-  display: flex;
+/* 직원 AI 추천 */
+.growth-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(560px, 1.2fr);
   align-items: center;
-  gap: 20px;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid var(--sf-border);
-  border-radius: var(--sf-radius-md);
-  padding: 28px;
-  box-shadow: var(--sf-shadow-sm);
+  gap: 54px;
+  min-height: 390px;
+  padding: 48px 52px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #17132f 0%, #292054 55%, #423477 100%);
+  color: white;
+  box-shadow: 0 24px 55px rgba(35, 25, 81, 0.22);
 }
 
-.profile-avatar {
-  width: 64px;
-  height: 64px;
+.growth-hero::before,
+.growth-hero::after {
+  content: '';
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
-  background: var(--sf-indigo-soft);
-  color: var(--sf-indigo-dark);
-  font-size: 24px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  pointer-events: none;
 }
 
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.growth-hero::before { width: 330px; height: 330px; left: -180px; bottom: -210px; }
+.growth-hero::after { width: 240px; height: 240px; right: -110px; top: -150px; }
+
+.growth-copy,
+.competency-panel { position: relative; z-index: 1; }
+
+.growth-eyebrow {
+  margin: 0 0 18px;
+  color: #a99cff;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.18em;
 }
 
-.profile-name {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--sf-ink);
+.growth-copy h1 {
+  margin: 0;
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: 1.22;
+  letter-spacing: -0.045em;
 }
 
-.profile-email {
+.growth-copy h1 strong { color: #b5a8ff; }
+
+.growth-copy > p:last-child {
+  max-width: 410px;
+  margin: 20px 0 0;
+  color: rgba(255, 255, 255, 0.62);
   font-size: 14px;
-  color: var(--sf-muted);
+  line-height: 1.75;
+}
+
+.competency-panel {
+  padding: 26px 26px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.competency-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.competency-heading span { color: #a99cff; font-size: 9px; font-weight: 850; letter-spacing: 0.16em; }
+.competency-heading h2 { margin: 7px 0 0; font-size: 19px; letter-spacing: -0.02em; }
+.competency-heading small { color: rgba(255, 255, 255, 0.48); font-size: 10px; }
+
+.radar-wrap {
+  position: relative;
+  width: min(100%, 520px);
+  height: 330px;
+  margin: -12px auto -8px;
+}
+
+.competency-radar { width: 100%; height: 100%; overflow: visible; }
+.radar-grid polygon,
+.radar-grid line {
+  fill: rgba(255, 255, 255, 0.018);
+  stroke: rgba(255, 255, 255, 0.19);
+  stroke-width: 1;
+}
+
+.radar-grid polygon:last-of-type {
+  fill: rgba(137, 116, 255, 0.04);
+  stroke: rgba(181, 168, 255, 0.56);
+  stroke-width: 1.5;
+}
+
+.radar-score {
+  fill: rgba(137, 116, 255, 0.34);
+  stroke: #b5a8ff;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 5px 9px rgba(108, 84, 239, 0.25));
+}
+
+.radar-dot { fill: #fff; stroke: #765fee; stroke-width: 2; }
+.radar-dot.missing { display: none; }
+
+.radar-label {
+  fill: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.radar-label-score {
+  fill: #b5a8ff;
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .badge {
@@ -503,11 +679,37 @@ onMounted(async () => {
   color: var(--sf-muted);
 }
 
-.recommend-message {
-  margin-bottom: 14px;
-  font-size: 13px;
-  color: var(--sf-muted);
+.learning-block {
+  padding: 30px;
+  border: 1px solid var(--sf-border);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.64);
+  box-shadow: var(--sf-shadow-sm);
 }
+
+.learning-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.learning-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.score-icon { color: #5844dc; background: #ebe8ff; }
+.job-icon { color: #087858; background: #dcf5ec; }
+.learning-heading p { margin: 0 0 3px; color: var(--sf-indigo); font-size: 9px; font-weight: 850; letter-spacing: 0.14em; }
+.learning-heading h2 { margin: 0; color: var(--sf-ink); font-size: 21px; letter-spacing: -0.03em; }
+.learning-heading span { display: block; margin-top: 5px; color: var(--sf-muted); font-size: 12px; }
 
 .recommend-grid {
   display: grid;
@@ -745,6 +947,8 @@ onMounted(async () => {
 }
 
 @media (max-width: 992px) {
+  .growth-hero { grid-template-columns: 1fr; gap: 34px; padding: 40px; }
+
   .recommend-grid,
   .loading-row {
     grid-template-columns: 1fr;
@@ -768,9 +972,14 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
-  .profile-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .page { padding-top: 24px; }
+  .shell { padding-left: 16px; padding-right: 16px; gap: 22px; }
+  .growth-hero { padding: 32px 20px; border-radius: 22px; }
+  .growth-copy h1 { font-size: 29px; }
+  .competency-panel { padding: 22px 14px 18px; }
+  .radar-wrap { height: 285px; }
+  .radar-label { font-size: 9px; }
+  .radar-label-score { font-size: 8px; }
+  .learning-block { padding: 22px 18px; }
 }
 </style>
