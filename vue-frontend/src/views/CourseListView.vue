@@ -11,14 +11,6 @@
         </div>
 
         <div class="title-row-actions">
-          <router-link
-            v-if="isInstructor"
-            to="/courses/new"
-            class="btn btn-primary create-course-btn"
-          >
-            교육과정 등록
-          </router-link>
-
           <div class="segmented">
             <button
               v-for="sort in sortOptions"
@@ -70,14 +62,6 @@
       <!-- 빈 상태 -->
       <div v-else class="empty-state">
         <p>해당 카테고리의 교육과정이 없습니다.</p>
-
-        <router-link
-          v-if="isInstructor"
-          to="/courses/new"
-          class="btn btn-primary empty-action-btn"
-        >
-          첫 교육과정 등록하기
-        </router-link>
       </div>
     </main>
   </div>
@@ -88,10 +72,8 @@ import { computed, onMounted, ref } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import CourseCard from '@/components/CourseCard.vue'
 import { useCourseStore } from '@/store/course.js'
-import { useAuthStore } from '@/store/auth.js'
 
 const courseStore = useCourseStore()
-const auth = useAuthStore()
 
 const { categories, loading } = courseStore
 
@@ -103,7 +85,6 @@ const sortOptions = [
 const selectedSort = ref('recommend')
 
 const selectedCategory = computed(() => courseStore.selectedCategory)
-const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
 
 const filteredCourses = computed(() => {
   if (!Array.isArray(courseStore.courses)) return []
@@ -190,11 +171,6 @@ onMounted(() => {
   color: var(--sf-muted);
   font-size: 15px;
   line-height: 1.6;
-}
-
-.create-course-btn {
-  white-space: nowrap;
-  text-decoration: none;
 }
 
 /* 정렬 세그먼트 */
@@ -314,12 +290,6 @@ onMounted(() => {
   padding: 80px 0;
   color: var(--sf-muted);
   font-size: 15px;
-}
-
-.empty-action-btn {
-  display: inline-flex;
-  margin-top: 16px;
-  text-decoration: none;
 }
 
 @media (max-width: 1200px) {
