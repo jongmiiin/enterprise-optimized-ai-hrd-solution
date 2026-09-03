@@ -77,37 +77,6 @@
 
         <!-- 강사 화면 -->
         <section v-else class="instructor-section">
-          <div class="approval-panel">
-            <div class="section-head">
-              <h3 class="section-title">HR 교육 신청 승인</h3>
-              <span class="section-subtitle">학생의 신청을 승인하면 결제 후 수강 가능 상태로 변경됩니다.</span>
-            </div>
-
-            <p v-if="approvalLoading" class="empty-text">승인 대기 목록을 불러오는 중입니다.</p>
-            <p v-else-if="approvalError" class="empty-text">{{ approvalError }}</p>
-            <p v-else-if="!pendingEnrollments.length" class="empty-text">승인 대기 신청이 없습니다.</p>
-
-            <div v-else class="approval-list">
-              <div v-for="item in pendingEnrollments" :key="item.enrollmentId" class="approval-item">
-                <div>
-                  <strong>{{ item.userName }}</strong>
-                  <span>{{ item.userEmail }}</span>
-                </div>
-                <div class="approval-course">
-                  <strong>{{ item.courseTitle }}</strong>
-                  <span>{{ item.courseCategory }} · {{ formatPrice(item.price) }}</span>
-                </div>
-                <button
-                  class="action-btn action-primary"
-                  :disabled="approvingId === item.enrollmentId"
-                  @click="approveEnrollment(item.enrollmentId)"
-                >
-                  {{ approvingId === item.enrollmentId ? '처리 중' : '승인' }}
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div class="section-head">
             <h3 class="section-title">내가 등록한 강좌</h3>
             <span class="section-subtitle">등록한 강좌와 강좌별 수강생 수를 확인할 수 있습니다.</span>
@@ -219,10 +188,6 @@ const recommendMessage = ref('')
 const myCourses = ref([])
 const instructorLoading = ref(true)
 const instructorError = ref('')
-const pendingEnrollments = ref([])
-const approvalLoading = ref(true)
-const approvalError = ref('')
-const approvingId = ref(null)
 
 const totalEnrollmentCount = computed(() =>
   myCourses.value.reduce((sum, course) => {
@@ -356,42 +321,10 @@ async function loadInstructorCourses() {
   }
 }
 
-async function loadPendingEnrollments() {
-  approvalLoading.value = true
-  approvalError.value = ''
-  try {
-    const res = await enrollmentApi.getAdminEnrollments('PENDING')
-    pendingEnrollments.value = Array.isArray(res.data?.data) ? res.data.data : []
-  } catch (error) {
-    console.error('[MyPage] failed to load pending enrollments:', error)
-    approvalError.value = error.response?.data?.message || '승인 대기 목록을 불러오지 못했습니다.'
-  } finally {
-    approvalLoading.value = false
-  }
-}
-
-async function approveEnrollment(enrollmentId) {
-  approvingId.value = enrollmentId
-  approvalError.value = ''
-  try {
-    await enrollmentApi.approve(enrollmentId)
-    pendingEnrollments.value = pendingEnrollments.value.filter(
-      item => Number(item.enrollmentId) !== Number(enrollmentId)
-    )
-    window.alert('수강 신청을 승인했습니다.')
-    window.setTimeout(loadPendingEnrollments, 1000)
-  } catch (error) {
-    console.error('[MyPage] failed to approve enrollment:', error)
-    approvalError.value = error.response?.data?.message || '승인 처리에 실패했습니다.'
-  } finally {
-    approvingId.value = null
-  }
-}
-
 onMounted(async () => {
   if (isInstructor.value) {
     recommendLoading.value = false
-    await Promise.all([loadPendingEnrollments(), loadInstructorCourses()])
+    await loadInstructorCourses()
   } else {
     instructorLoading.value = false
     await loadStudentRecommendations()
@@ -574,47 +507,6 @@ onMounted(async () => {
 
 .instructor-loading {
   margin-bottom: 20px;
-}
-
-.approval-panel {
-  margin-bottom: 32px;
-  padding: 22px;
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-.approval-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.approval-item {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr auto;
-  align-items: center;
-  gap: 18px;
-  padding: 14px;
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
-}
-
-.approval-item > div,
-.approval-course {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.approval-item span {
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-.approval-item button:disabled {
-  opacity: 0.55;
-  cursor: wait;
 }
 
 .skeleton-card {
@@ -806,10 +698,6 @@ onMounted(async () => {
 
   .summary-cards {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .approval-item {
-    grid-template-columns: 1fr;
   }
 }
 

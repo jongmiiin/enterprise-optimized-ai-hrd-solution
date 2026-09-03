@@ -133,6 +133,8 @@ public class EnrollmentService {
 
         enrollment.activate();
 
+        courseServiceClient.increaseEnrollmentCount(courseId);
+
         kafkaProducer.publishEnrollmentCompleted(
                 KafkaEvent.EnrollmentCompletedEvent.builder()
                         .enrollmentId(enrollment.getId())
