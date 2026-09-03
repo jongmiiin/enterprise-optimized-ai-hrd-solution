@@ -25,24 +25,6 @@ export const useCourseStore = defineStore('course', () => {
     OTHER: '기타'
   }
 
-  // 썸네일 이미지 매핑
-  const thumbnailMap = {
-    SPRING: new URL('../assets/images/courses/spring_boot.png', import.meta.url).href,
-    VUE: new URL('../assets/images/courses/vue_js.png', import.meta.url).href,
-    DOCKER: new URL('../assets/images/courses/docker.png', import.meta.url).href,
-    KUBERNETES: new URL('../assets/images/courses/kubernetes.png', import.meta.url).href,
-    PYTHON: new URL('../assets/images/courses/python.png', import.meta.url).href,
-    AI: new URL('../assets/images/courses/generative_ai.png', import.meta.url).href,
-  }
-
-  const categoryThumbnailMap = {
-    '백엔드': thumbnailMap.SPRING,
-    '프론트엔드': thumbnailMap.VUE,
-    'DevOps': thumbnailMap.KUBERNETES,
-    '데이터': thumbnailMap.PYTHON,
-    'AI': thumbnailMap.AI
-  }
-
   function normalizeCategory(category) {
     if (!category) return ''
     return categoryLabelMap[category] || category
@@ -55,15 +37,6 @@ export const useCourseStore = defineStore('course', () => {
       ...course,
       category: normalizeCategory(course.category)
     }
-  }
-
-  function getThumbnail(course) {
-    const thumbKey = course?.thumbnail?.toUpperCase?.() || ''
-    if (thumbKey && thumbnailMap[thumbKey]) {
-      return thumbnailMap[thumbKey]
-    }
-
-    return categoryThumbnailMap[course?.category] || null
   }
 
   async function fetchCourses() {
@@ -128,11 +101,9 @@ export const useCourseStore = defineStore('course', () => {
     error,
     categories,
     selectedCategory,
-    thumbnailMap,
     categoryLabelMap,
     normalizeCategory,
     normalizeCourse,
-    getThumbnail,
     fetchCourses,
     fetchCourse,
     setCategory
