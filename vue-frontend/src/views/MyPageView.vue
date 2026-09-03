@@ -1,51 +1,20 @@
 <template>
   <div class="page-wrapper">
     <AppHeader />
-    <div class="page-layout">
-      <aside class="sidebar">
-        <div class="sidebar-section">
-          <div class="sidebar-label">메뉴</div>
 
-          <router-link to="/courses" class="sidebar-item">
-            <span class="si-icon">📚</span> 강의 목록
-          </router-link>
-
-          <router-link
-            v-if="!isInstructor"
-            to="/enrollments"
-            class="sidebar-item"
-          >
-            <span class="si-icon">✅</span> 내 수강 목록
-          </router-link>
-
-          <router-link to="/mypage" class="sidebar-item active">
-            <span class="si-icon">⭐</span> 마이페이지
-          </router-link>
-        </div>
-
-        <div class="sidebar-section">
-          <div class="sidebar-label">계정</div>
-          <button class="sidebar-item sidebar-btn" @click="handleLogout">
-            <span class="si-icon">🚪</span> 로그아웃
-          </button>
-        </div>
-      </aside>
-
-      <main class="main-content">
-        <!-- 프로필 카드 -->
+    <main class="page shell">
+      <!-- 직원 화면 -->
+      <template v-if="!isInstructor">
         <div class="profile-card fade-in-up">
           <div class="profile-avatar">{{ auth.user?.name?.charAt(0) || '?' }}</div>
           <div class="profile-info">
             <h2 class="profile-name">{{ auth.user?.name || '사용자' }}</h2>
             <p class="profile-email">{{ auth.user?.email || '-' }}</p>
-            <span class="badge" :class="isInstructor ? 'badge-amber' : 'badge-blue'">
-              {{ isInstructor ? '강사' : '학생' }}
-            </span>
+            <span class="badge badge-indigo">직원</span>
           </div>
         </div>
 
-        <!-- 학생 화면 -->
-        <section v-if="!isInstructor" class="recommend-section">
+        <section class="recommend-section">
           <h3 class="section-title">추천 강의</h3>
 
           <p v-if="recommendMessage" class="recommend-message">
@@ -74,93 +43,100 @@
             아직 추천할 강의가 없습니다.
           </p>
         </section>
+      </template>
 
-        <!-- 강사 화면 -->
-        <section v-else class="instructor-section">
-          <div class="section-head">
-            <h3 class="section-title">내가 등록한 강좌</h3>
-            <span class="section-subtitle">등록한 강좌와 강좌별 수강생 수를 확인할 수 있습니다.</span>
+      <!-- HR 화면: 교육 승인 관리 -->
+      <template v-else>
+        <div class="title-row">
+          <div>
+            <p class="eyebrow">LEARNING ADMIN</p>
+            <h1 class="page-title">교육 신청을 검토해 주세요</h1>
+            <p class="page-desc">직원이 신청한 AI 추천 과정을 확인하고 승인할 수 있어요.</p>
           </div>
 
-          <div class="summary-cards">
-            <div class="summary-card">
-              <div class="summary-label">등록 강좌 수</div>
-              <div class="summary-value">{{ myCourses.length }}</div>
-            </div>
-            <div class="summary-card">
-              <div class="summary-label">총 수강생 수</div>
-              <div class="summary-value">{{ totalEnrollmentCount }}</div>
-            </div>
+          <select v-model="selectedJob" class="select-small">
+            <option value="전체 직무">전체 직무</option>
+            <option v-for="job in jobTitles" :key="job" :value="job">{{ job }}</option>
+          </select>
+        </div>
+
+        <section class="metric-grid">
+          <div class="panel metric">
+            <div class="metric-label">승인 대기 <span class="dot dot-amber"></span></div>
+            <div class="metric-value">{{ pendingCount }}건</div>
           </div>
-
-          <div v-if="instructorLoading" class="loading-row instructor-loading">
-            <div v-for="i in 3" :key="i" class="skeleton-card">
-              <div class="skeleton-thumb"></div>
-              <div class="skeleton-body">
-                <div class="skeleton-line short"></div>
-                <div class="skeleton-line"></div>
-              </div>
-            </div>
+          <div class="panel metric">
+            <div class="metric-label">예상 결제 금액</div>
+            <div class="metric-value">{{ expectedAmount.toLocaleString() }}원</div>
           </div>
-
-          <div v-else-if="myCourses.length" class="instructor-course-list fade-in">
-            <div
-              v-for="course in myCourses"
-              :key="course.id"
-              class="instructor-course-card"
-            >
-              <div class="course-card-top">
-                <div>
-                  <h4 class="course-title">{{ course.title }}</h4>
-                  <p class="course-desc">{{ course.description || '설명이 없습니다.' }}</p>
-                </div>
-                <span
-                  class="status-badge"
-                  :class="course.status === 'ACTIVE' ? 'status-active' : 'status-inactive'"
-                >
-                  {{ course.status || 'UNKNOWN' }}
-                </span>
-              </div>
-
-              <div class="course-meta-grid">
-                <div class="meta-box">
-                  <div class="meta-label">카테고리</div>
-                  <div class="meta-value">{{ course.category || '-' }}</div>
-                </div>
-                <div class="meta-box">
-                  <div class="meta-label">가격</div>
-                  <div class="meta-value">{{ formatPrice(course.price) }}</div>
-                </div>
-                <div class="meta-box">
-                  <div class="meta-label">수강생 수</div>
-                  <div class="meta-value">
-                    {{ course.enrollment_count ?? course.enrollmentCount ?? 0 }}명
-                  </div>
-                </div>
-                <div class="meta-box">
-                  <div class="meta-label">강좌 ID</div>
-                  <div class="meta-value">#{{ course.id }}</div>
-                </div>
-              </div>
-
-              <div class="course-card-actions">
-                <router-link :to="`/courses/${course.id}`" class="action-btn action-primary">
-                  강좌 보기
-                </router-link>
-              </div>
-            </div>
+          <div class="panel metric">
+            <div class="metric-label">이번 달 승인 <span class="dot dot-mint"></span></div>
+            <div class="metric-value">{{ approvedCount }}건</div>
           </div>
-
-          <p v-else-if="instructorError" class="empty-text">
-            {{ instructorError }}
-          </p>
-
-          <p v-else class="empty-text">
-            아직 등록한 강좌가 없습니다.
-          </p>
         </section>
-      </main>
-    </div>
+
+        <div class="admin-toolbar">
+          <div>
+            <h2 class="section-title">교육 신청 현황</h2>
+            <p class="section-desc">승인 대기와 완료 내역을 한곳에서 확인하세요.</p>
+          </div>
+          <div class="segmented">
+            <button
+              type="button"
+              :class="['segment', { active: approvalTab === 'pending' }]"
+              @click="approvalTab = 'pending'"
+            >
+              승인 대기 {{ pendingCount }}
+            </button>
+            <button
+              type="button"
+              :class="['segment', { active: approvalTab === 'approved' }]"
+              @click="approvalTab = 'approved'"
+            >
+              승인 완료 {{ approvedCount }}
+            </button>
+          </div>
+        </div>
+
+        <section class="panel data-table fade-in">
+          <div class="table-head approval-cols">
+            <span>직원</span>
+            <span>신청 교육</span>
+            <span>AI 추천</span>
+            <span>금액</span>
+            <span>상태</span>
+            <span>처리</span>
+          </div>
+
+          <div v-for="row in filteredApprovalRows" :key="row.id" class="table-row approval-cols">
+            <div>
+              <div class="cell-title">{{ row.employee }}</div>
+              <div class="cell-sub">{{ row.jobTitle }}</div>
+            </div>
+            <span class="cell-title">{{ row.courseTitle }}</span>
+            <span class="recommend-score">{{ row.recommendScore }}%</span>
+            <span>{{ row.amount.toLocaleString() }}원</span>
+            <span>
+              <span class="badge" :class="row.status === 'ACTIVE' ? 'badge-mint' : 'badge-amber'">
+                {{ row.status === 'ACTIVE' ? '승인 완료' : '승인 대기' }}
+              </span>
+            </span>
+            <span>
+              <button v-if="row.status !== 'ACTIVE'" type="button" class="status-button" @click="approveRow(row)">
+                승인·결제
+              </button>
+              <span v-else class="cell-sub">승인 완료</span>
+            </span>
+          </div>
+
+          <div v-if="!filteredApprovalRows.length" class="empty-row">
+            해당 조건의 신청 내역이 없습니다.
+          </div>
+        </section>
+
+        <p class="helper-note">승인과 동시에 결제가 진행되며 직원의 수강 상태가 활성화됩니다.</p>
+      </template>
+    </main>
   </div>
 </template>
 
@@ -171,54 +147,61 @@ import AppHeader from '@/components/AppHeader.vue'
 import CourseCard from '@/components/CourseCard.vue'
 import { useAuthStore } from '@/store/auth.js'
 import { enrollmentApi } from '@/api/enrollment.js'
-import { courseApi } from '@/api/course.js'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
 
-/* 학생용 */
+/* 직원용 */
 const recommendations = ref([])
 const recommendLoading = ref(true)
 const recommendError = ref('')
 const recommendMessage = ref('')
 
-/* 강사용 */
-const myCourses = ref([])
-const instructorLoading = ref(true)
-const instructorError = ref('')
+/* HR 승인 관리용 (백엔드에 전체 직원 신청 조회 API가 아직 없어 더미 데이터 사용) */
+const approvalRows = ref([
+  { id: 1, employee: '김민수', jobTitle: '백엔드 개발자', courseTitle: '생성형 AI로 업무 자동화하기', recommendScore: 96, amount: 90000, status: 'PENDING' },
+  { id: 2, employee: '박준호', jobTitle: '데이터 분석가', courseTitle: '좋은 프롬프트를 만드는 법', recommendScore: 91, amount: 80000, status: 'PENDING' },
+  { id: 3, employee: '최민혁', jobTitle: '보안 엔지니어', courseTitle: '개발자를 위한 책임 있는 AI', recommendScore: 87, amount: 100000, status: 'PENDING' },
+  { id: 4, employee: '이서연', jobTitle: '프론트엔드 개발자', courseTitle: '프론트엔드 개발자를 위한 AI 코딩 어시스턴트', recommendScore: 94, amount: 80000, status: 'ACTIVE' },
+  { id: 5, employee: '정하은', jobTitle: 'DevOps 엔지니어', courseTitle: '개발자를 위한 책임 있는 AI 활용', recommendScore: 89, amount: 100000, status: 'ACTIVE' },
+  { id: 6, employee: '강태우', jobTitle: '데이터 분석가', courseTitle: '데이터 분석 업무에 AI 활용하기', recommendScore: 93, amount: 90000, status: 'ACTIVE' },
+  { id: 7, employee: '윤소희', jobTitle: '프로덕트 매니저', courseTitle: '비개발자를 위한 생성형 AI 활용법', recommendScore: 85, amount: 70000, status: 'ACTIVE' },
+  { id: 8, employee: '한지훈', jobTitle: '백엔드 개발자', courseTitle: '생성형 AI로 업무 자동화하기', recommendScore: 90, amount: 90000, status: 'ACTIVE' },
+  { id: 9, employee: '오다은', jobTitle: 'HR 담당자', courseTitle: '좋은 프롬프트를 만드는 법', recommendScore: 88, amount: 80000, status: 'ACTIVE' },
+  { id: 10, employee: '배주현', jobTitle: '마케터', courseTitle: '비개발자를 위한 생성형 AI 활용법', recommendScore: 92, amount: 70000, status: 'ACTIVE' },
+  { id: 11, employee: '조민재', jobTitle: '프론트엔드 개발자', courseTitle: 'AI 협업 도구 실전', recommendScore: 86, amount: 80000, status: 'ACTIVE' }
+])
+const approvalTab = ref('pending')
+const selectedJob = ref('전체 직무')
 
-const totalEnrollmentCount = computed(() =>
-  myCourses.value.reduce((sum, course) => {
-    const count = Number(course.enrollment_count ?? course.enrollmentCount ?? 0)
-    return sum + (Number.isNaN(count) ? 0 : count)
-  }, 0)
+const jobTitles = computed(() => [...new Set(approvalRows.value.map(r => r.jobTitle))])
+
+const pendingCount = computed(() => approvalRows.value.filter(r => r.status !== 'ACTIVE').length)
+const approvedCount = computed(() => approvalRows.value.filter(r => r.status === 'ACTIVE').length)
+const expectedAmount = computed(() =>
+  approvalRows.value
+    .filter(r => r.status !== 'ACTIVE')
+    .reduce((sum, r) => sum + r.amount, 0)
 )
+
+const filteredApprovalRows = computed(() => {
+  return approvalRows.value.filter(r => {
+    const matchesTab = approvalTab.value === 'pending' ? r.status !== 'ACTIVE' : r.status === 'ACTIVE'
+    const matchesJob = selectedJob.value === '전체 직무' || r.jobTitle === selectedJob.value
+    return matchesTab && matchesJob
+  })
+})
+
+function approveRow(row) {
+  // 실제 결제/승인 API가 아직 없어 프론트 상태만 즉시 전환 (데모용)
+  row.status = 'ACTIVE'
+}
 
 function handleLogout() {
   auth.logout()
   router.push('/')
-}
-
-function formatPrice(price) {
-  const value = Number(price ?? 0)
-  if (Number.isNaN(value)) return '-'
-  return `${value.toLocaleString()}원`
-}
-
-/**
- * course 객체에서 강사 식별자 추출
- */
-function getCourseInstructorId(course) {
-  return (
-    course.instructorId ??
-    course.instructor_id ??
-    course.instructor ??
-    course.teacherId ??
-    course.teacher_id ??
-    null
-  )
 }
 
 async function loadStudentRecommendations() {
@@ -262,71 +245,10 @@ async function loadStudentRecommendations() {
   }
 }
 
-async function loadInstructorCourses() {
-  try {
-    if (!auth.user) {
-      console.warn('[MyPage] instructor auth.user is missing')
-      instructorError.value = '강좌 정보를 불러오지 못했습니다.'
-      return
-    }
-
-    if (!auth.user.id) {
-      console.warn('[MyPage] instructor auth.user.id is missing:', auth.user)
-      instructorError.value = '강좌 정보를 불러오지 못했습니다.'
-      return
-    }
-
-    const res = await courseApi.getCourses()
-    console.log('[MyPage] course list response:', res.data)
-
-    let courses = []
-
-    if (Array.isArray(res.data?.data)) {
-      courses = res.data.data
-    } else if (Array.isArray(res.data)) {
-      courses = res.data
-    } else {
-      console.warn('[MyPage] unexpected course response shape:', res.data)
-    }
-
-    console.log('[MyPage] auth.user =', auth.user)
-    console.log('[MyPage] courses =', courses)
-    console.log('[MyPage] first course =', courses[0])
-
-    courses.forEach(course => {
-      console.log('[MyPage] instructor fields check:', {
-        courseId: course.id,
-        instructorId: course.instructorId,
-        instructor_id: course.instructor_id,
-        instructor: course.instructor,
-        teacherId: course.teacherId,
-        teacher_id: course.teacher_id,
-        rawCourse: course
-      })
-    })
-
-    const instructorId = Number(auth.user.id)
-
-    myCourses.value = courses.filter(course => {
-      const courseInstructorId = Number(getCourseInstructorId(course))
-      return !Number.isNaN(courseInstructorId) && courseInstructorId === instructorId
-    })
-
-    console.log('[MyPage] filtered myCourses =', myCourses.value)
-  } catch (error) {
-    console.error('[MyPage] failed to load instructor courses:', error)
-    instructorError.value = '현재 강좌 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
-  } finally {
-    instructorLoading.value = false
-  }
-}
-
 onMounted(async () => {
   if (isInstructor.value) {
     recommendLoading.value = false
-    await loadInstructorCourses()
   } else {
-    instructorLoading.value = false
     await loadStudentRecommendations()
   }
 })
@@ -335,97 +257,86 @@ onMounted(async () => {
 <style scoped>
 .page-wrapper {
   min-height: 100vh;
-  background: var(--color-bg-secondary);
+  background:
+    radial-gradient(circle at 80% -10%, rgba(126, 108, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 0% 80%, rgba(84, 215, 180, 0.05), transparent 28%),
+    var(--sf-canvas);
 }
 
-.page-layout {
-  max-width: 1200px;
+.page {
+  padding: 48px 0 72px;
+}
+
+.shell {
+  max-width: var(--sf-shell);
   margin: 0 auto;
-  padding: 32px 24px;
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 28px;
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 8px;
-}
-
-.sidebar-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
-  padding: 8px 12px 4px;
-}
-
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  transition: var(--transition);
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  text-decoration: none;
-}
-
-.sidebar-item:hover {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-}
-
-.sidebar-item.active {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-weight: 500;
-}
-
-.si-icon {
-  font-size: 15px;
-}
-
-.main-content {
-  min-width: 0;
+  padding-left: 24px;
+  padding-right: 24px;
   display: flex;
   flex-direction: column;
   gap: 32px;
 }
 
+/* 공통 타이틀 영역 (HR) */
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--sf-indigo);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 38px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--sf-ink);
+}
+
+.page-desc {
+  margin: 12px 0 0;
+  color: var(--sf-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.select-small {
+  height: 36px;
+  padding: 0 34px 0 13px;
+  border: 1px solid var(--sf-border);
+  border-radius: 11px;
+  color: var(--sf-muted);
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 12px;
+}
+
+/* 직원 프로필 카드 */
 .profile-card {
   display: flex;
   align-items: center;
   gap: 20px;
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
   padding: 28px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--sf-shadow-sm);
 }
 
 .profile-avatar {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+  background: var(--sf-indigo-soft);
+  color: var(--sf-indigo-dark);
   font-size: 24px;
   font-weight: 700;
   display: flex;
@@ -443,60 +354,63 @@ onMounted(async () => {
 .profile-name {
   font-size: 20px;
   font-weight: 700;
+  color: var(--sf-ink);
 }
 
 .profile-email {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--sf-muted);
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  padding: 6px 12px;
+  min-height: 25px;
+  padding: 0 10px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 750;
 }
 
-.badge-blue {
-  background: #e8f1ff;
-  color: #2563eb;
+.badge-indigo {
+  color: var(--sf-indigo-dark);
+  background: var(--sf-indigo-soft);
+}
+
+.badge-mint {
+  color: #087858;
+  background: var(--sf-success-bg);
 }
 
 .badge-amber {
-  background: #f7edd8;
-  color: #9a6700;
-}
-
-.section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  color: #ad5e00;
+  background: var(--sf-pending-bg);
 }
 
 .section-title {
+  margin: 0;
   font-size: 18px;
   font-weight: 700;
+  color: var(--sf-ink);
 }
 
-.section-subtitle {
+.section-desc {
+  margin: 5px 0 0;
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--sf-muted);
 }
 
 .recommend-message {
   margin-bottom: 14px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--sf-muted);
 }
 
 .recommend-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 18px;
 }
 
 .loading-row {
@@ -505,20 +419,16 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.instructor-loading {
-  margin-bottom: 20px;
-}
-
 .skeleton-card {
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 20px;
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--sf-border);
 }
 
 .skeleton-thumb {
-  height: 110px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  height: 132px;
+  background: linear-gradient(90deg, #eef0f6 25%, #e2e5ee 50%, #eef0f6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -533,7 +443,7 @@ onMounted(async () => {
 .skeleton-line {
   height: 12px;
   border-radius: 6px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, #eef0f6 25%, #e2e5ee 50%, #eef0f6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -542,141 +452,188 @@ onMounted(async () => {
   width: 40%;
 }
 
-.summary-cards {
+.empty-text {
+  color: var(--sf-muted);
+  font-size: 14px;
+}
+
+/* HR 요약 카드 */
+.metric-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(160px, 220px));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  margin-bottom: 20px;
 }
 
-.summary-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
-  box-shadow: var(--shadow-sm);
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  box-shadow: var(--sf-shadow-sm);
 }
 
-.summary-label {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
+.metric {
+  padding: 19px 21px;
+  position: relative;
+  overflow: hidden;
 }
 
-.summary-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
+.metric::after {
+  content: '';
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  right: -35px;
+  top: -35px;
+  border-radius: 50%;
+  background: var(--sf-indigo-soft);
 }
 
-.instructor-course-list {
-  display: grid;
-  gap: 18px;
-}
-
-.instructor-course-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 22px;
-  box-shadow: var(--shadow-sm);
-}
-
-.course-card-top {
+.metric-label {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 6px;
+  color: var(--sf-muted);
+  font-size: 12px;
+}
+
+.metric-value {
+  position: relative;
+  z-index: 1;
+  margin-top: 9px;
+  font-size: 26px;
+  font-weight: 850;
+  letter-spacing: -0.045em;
+  color: var(--sf-ink);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-amber {
+  background: var(--sf-pending);
+}
+
+.dot-mint {
+  background: var(--sf-success);
+}
+
+/* 승인 테이블 툴바 */
+.admin-toolbar {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
 }
 
-.course-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.course-desc {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-  white-space: pre-line;
-}
-
-.status-badge {
+.segmented {
   display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  border-radius: 999px;
-  padding: 6px 10px;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--sf-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.segment {
+  height: 33px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sf-muted);
   font-size: 12px;
-  font-weight: 600;
-}
-
-.status-active {
-  background: #eaf8ef;
-  color: #0f8a3b;
-}
-
-.status-inactive {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.course-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.meta-box {
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
-  padding: 14px;
-}
-
-.meta-label {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-bottom: 6px;
-}
-
-.meta-value {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.course-card-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
+  font-weight: 750;
   transition: var(--transition);
 }
 
-.action-primary {
-  background: var(--color-primary);
+.segment.active {
+  color: var(--sf-indigo-dark);
+  background: white;
+  box-shadow: 0 2px 8px rgba(16, 19, 35, 0.07);
+}
+
+/* 승인 테이블 */
+.data-table {
+  overflow: hidden;
+}
+
+.table-head,
+.table-row {
+  display: grid;
+  align-items: center;
+  padding: 0 22px;
+}
+
+.table-head {
+  height: 45px;
+  color: var(--sf-subtle);
+  background: #f8f9fc;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.table-row {
+  min-height: 78px;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 13px;
+  color: var(--sf-ink);
+}
+
+.table-row:last-child {
+  border-bottom: 0;
+}
+
+.approval-cols {
+  grid-template-columns: 1fr 2fr 0.65fr 0.7fr 0.75fr 0.78fr;
+}
+
+.cell-title {
+  font-weight: 750;
+  font-size: 13px;
+}
+
+.cell-sub {
+  margin-top: 4px;
+  color: var(--sf-muted);
+  font-size: 11px;
+}
+
+.recommend-score {
+  color: var(--sf-success);
+  font-weight: 850;
+  font-size: 13px;
+}
+
+.status-button {
+  height: 35px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 11px;
   color: white;
+  background: linear-gradient(135deg, var(--sf-indigo), #7254ef);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
 }
 
-.action-primary:hover {
-  opacity: 0.92;
+.empty-row {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--sf-muted);
+  font-size: 13px;
 }
 
-.empty-text {
-  color: var(--color-text-muted);
-  font-size: 14px;
+.helper-note {
+  margin: -12px 0 0;
+  color: var(--sf-muted);
+  font-size: 12px;
 }
 
 @keyframes shimmer {
@@ -686,18 +643,25 @@ onMounted(async () => {
 }
 
 @media (max-width: 992px) {
-  .page-layout {
-    grid-template-columns: 1fr;
-  }
-
   .recommend-grid,
-  .loading-row,
-  .course-meta-grid {
+  .loading-row {
     grid-template-columns: 1fr;
   }
 
-  .summary-cards {
-    grid-template-columns: 1fr 1fr;
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 
@@ -705,14 +669,6 @@ onMounted(async () => {
   .profile-card {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .course-card-top {
-    flex-direction: column;
-  }
-
-  .summary-cards {
-    grid-template-columns: 1fr;
   }
 }
 </style>
