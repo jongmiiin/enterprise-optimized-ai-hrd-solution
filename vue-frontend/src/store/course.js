@@ -11,13 +11,18 @@ export const useCourseStore = defineStore('course', () => {
 
   const categories = ['전체', '백엔드', '프론트엔드', 'DevOps', '데이터', 'AI']
 
-  // 백엔드 카테고리 → 프론트 표시용 카테고리
+  // 백엔드 카테고리(Course.Category enum) → 프론트 표시용 카테고리
   const categoryLabelMap = {
     BACKEND: '백엔드',
     FRONTEND: '프론트엔드',
     DEVOPS: 'DevOps',
     DATA: '데이터',
-    AI: 'AI'
+    DATA_SCIENCE: '데이터',
+    AI: 'AI',
+    MOBILE: '모바일',
+    SECURITY: '보안',
+    DATABASE: '데이터베이스',
+    OTHER: '기타'
   }
 
   // 썸네일 이미지 매핑
