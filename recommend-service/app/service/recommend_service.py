@@ -1,104 +1,161 @@
 import logging
-from collections import Counter
-from typing import List, Optional
 
 from app.client.course_client import course_client
 from app.client.enrollment_client import enrollment_client
-from app.model.schemas import CourseCategory, CourseResponse, RecommendResponse
+from app.data.mock_data import (
+    COURSE_COMPETENCY_MAP,
+    EMPLOYEE_PROFILES,
+    JOB_REQUIREMENTS,
+    PROFILE_LEARNING_PATHS,
+)
+from app.model.schemas import (
+    EmployeeProfileResponse,
+    RecommendedCourseResponse,
+    RecommendResponse,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class RecommendService:
-    """
-    규칙 기반 강의 추천 서비스
+    """직무 역량 차이와 선수 학습 순서를 사용하는 설명 가능한 MVP 추천."""
 
-    추천 규칙:
-    1. 사용자의 수강 중인 강의 카테고리 분석
-    2. 가장 많이 수강한 카테고리 선택 (최빈 카테고리)
-    3. 해당 카테고리에서 미수강 강의 조회
-    4. 수강생 수 기준 내림차순 정렬하여 반환
-    5. 수강 이력 없으면 전체 강의 중 인기순 반환
-    """
-
-    MAX_RECOMMEND_COUNT = 5  # 최대 추천 강의 수
+    MAX_RECOMMEND_COUNT = 3
 
     async def get_recommendations(self, user_id: int) -> RecommendResponse:
         logger.info(f"[RecommendService] 추천 시작 - userId: {user_id}")
 
-        # 1. 수강 이력 조회
+        profile = EMPLOYEE_PROFILES.get(user_id)
+        if not profile:
+            return await self._recommend_for_unknown_user(user_id)
+
         history = await enrollment_client.get_enrollment_history(user_id)
-        active_course_ids = history.activeCourseIds
+        active_course_ids = set(history.activeCourseIds)
+        all_courses = await course_client.get_all_courses()
+        course_map = {course.id: course for course in all_courses}
+        skill_gaps = self._calculate_skill_gaps(profile)
 
-        # 2. 수강 이력 없는 신규 사용자 처리
-        if not active_course_ids:
-            return await self._recommend_for_new_user(user_id)
+        pipeline = [
+            item
+            for item in PROFILE_LEARNING_PATHS.get(user_id, [])
+            if item["courseId"] not in active_course_ids
+            and item["courseId"] in course_map
+        ]
+        # 프로필별 후보 목록 자체가 현재 수준에 맞는 순서로 구성되어 있다.
+        # 화면에서는 로드맵을 노출하지 않지만, 초급자에게 고급 과정이 먼저
+        # 추천되지 않도록 현재 수준에 맞는 앞쪽 3개를 사용한다.
+        selected = pipeline[:self.MAX_RECOMMEND_COUNT]
+        raw_scores = [
+            self._calculate_course_fit(item["courseId"], skill_gaps)
+            for item in selected
+        ]
+        max_raw_score = max(raw_scores, default=1.0) or 1.0
 
-        # 3. 수강한 강의의 카테고리 분석 → 최빈 카테고리 선택
-        dominant_category = await self._find_dominant_category(active_course_ids)
-        if not dominant_category:
-            return await self._recommend_for_new_user(user_id)
+        recommended = []
+        for learning_order, (item, raw_score) in enumerate(
+            zip(selected, raw_scores), start=1
+        ):
+            course_id = item["courseId"]
+            course = course_map[course_id]
+            missing_skills = self._matched_missing_skills(course_id, skill_gaps)
+            recommended.append(
+                RecommendedCourseResponse(
+                    **course.model_dump(),
+                    recommendScore=round(60 + raw_score / max_raw_score * 40, 1),
+                    recommendReason=item["reason"],
+                    missingSkills=missing_skills,
+                    learningOrder=learning_order,
+                )
+            )
 
-        # 4. 최빈 카테고리 기반 미수강 강의 조회
-        recommended = await course_client.get_recommend_courses(
-            category=dominant_category,
-            exclude_ids=active_course_ids
+        logger.info(
+            "[RecommendService] 역량 기반 추천 완료 - userId: %s, count: %s",
+            user_id,
+            len(recommended),
         )
-
-        # 5. 최대 추천 수 제한
-        recommended = recommended[:self.MAX_RECOMMEND_COUNT]
-
-        logger.info(f"[RecommendService] 추천 완료 - userId: {user_id}, "
-                    f"category: {dominant_category}, count: {len(recommended)}")
 
         return RecommendResponse(
             userId=user_id,
+            employeeCode=profile["employeeCode"],
+            employeeName=profile["name"],
+            job=profile["job"],
+            jobLabel=profile["jobLabel"],
+            overallLevel=profile["overallLevel"],
+            careerGoal=profile["careerGoal"],
+            competencyScores=profile["competencyScores"],
             recommendedCourses=recommended,
-            basedOnCategory=dominant_category,
-            message=f"{dominant_category.value} 카테고리 기반 추천 강의입니다"
+            basedOnCategory=None,
+            message=f"{profile['name']}님의 현재 역량과 희망 방향을 반영한 맞춤 강의입니다.",
         )
 
-    async def _find_dominant_category(
-        self, course_ids: List[int]
-    ) -> Optional[CourseCategory]:
-        """
-        수강한 강의들의 카테고리 분석 → 최빈 카테고리 반환
-        Course Service에서 각 강의 정보를 조회하여 카테고리 집계
-        """
-        all_courses = await course_client.get_all_courses()
-        course_map = {c.id: c for c in all_courses}
-
-        categories = [
-            course_map[cid].category
-            for cid in course_ids
-            if cid in course_map
-        ]
-
-        if not categories:
+    def get_employee_profile(self, user_id: int) -> EmployeeProfileResponse | None:
+        profile = EMPLOYEE_PROFILES.get(user_id)
+        if not profile:
             return None
+        required = JOB_REQUIREMENTS[profile["job"]]
+        return EmployeeProfileResponse(
+            userId=user_id,
+            employeeCode=profile["employeeCode"],
+            name=profile["name"],
+            job=profile["job"],
+            jobLabel=profile["jobLabel"],
+            overallLevel=profile["overallLevel"],
+            careerGoal=profile["careerGoal"],
+            competencyScores=profile["competencyScores"],
+            skills=profile["skills"],
+            requiredSkills=required,
+            skillGaps=self._calculate_skill_gaps(profile),
+        )
 
-        # Counter로 최빈 카테고리 선택
-        most_common = Counter(categories).most_common(1)
-        return most_common[0][0] if most_common else None
+    def _calculate_skill_gaps(self, profile: dict) -> dict[str, int]:
+        required = JOB_REQUIREMENTS[profile["job"]]
+        return {
+            skill: max(required_level - profile["skills"].get(skill, 0), 0)
+            for skill, required_level in required.items()
+        }
 
-    async def _recommend_for_new_user(self, user_id: int) -> RecommendResponse:
-        """
-        신규 사용자: 수강생 수 기준 전체 인기 강의 추천
-        """
-        logger.info(f"[RecommendService] 신규 사용자 추천 - userId: {user_id}")
+    def _calculate_course_fit(
+        self, course_id: int, skill_gaps: dict[str, int]
+    ) -> float:
+        weights = COURSE_COMPETENCY_MAP[course_id]["skillWeights"]
+        return sum(skill_gaps.get(skill, 0) * weight for skill, weight in weights.items())
 
+    def _matched_missing_skills(
+        self, course_id: int, skill_gaps: dict[str, int]
+    ) -> list[str]:
+        weights = COURSE_COMPETENCY_MAP[course_id]["skillWeights"]
+        matched = [
+            (skill, skill_gaps.get(skill, 0) * weight)
+            for skill, weight in weights.items()
+            if skill_gaps.get(skill, 0) > 0
+        ]
+        matched.sort(key=lambda item: item[1], reverse=True)
+        return [skill for skill, _ in matched]
+
+    async def _recommend_for_unknown_user(self, user_id: int) -> RecommendResponse:
+        logger.info("[RecommendService] 목업 프로필 없음 - userId: %s", user_id)
         all_courses = await course_client.get_all_courses()
         popular = sorted(
             all_courses,
             key=lambda c: c.enrollmentCount,
-            reverse=True
+            reverse=True,
         )[:self.MAX_RECOMMEND_COUNT]
+        recommended = [
+            RecommendedCourseResponse(
+                **course.model_dump(),
+                recommendScore=0,
+                recommendReason="직원 역량 프로필이 없어 인기 과정으로 대체했습니다.",
+                missingSkills=[],
+                learningOrder=index,
+            )
+            for index, course in enumerate(popular, start=1)
+        ]
 
         return RecommendResponse(
             userId=user_id,
-            recommendedCourses=popular,
+            recommendedCourses=recommended,
             basedOnCategory=None,
-            message="인기 강의 추천입니다"
+            message="직원 역량 프로필이 없어 인기 과정으로 대체했습니다.",
         )
 
 

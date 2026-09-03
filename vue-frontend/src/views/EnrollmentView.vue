@@ -37,12 +37,23 @@
       <main class="main-content">
         <h1 class="page-title">내 수강 목록</h1>
 
+        <div class="status-tabs">
+          <button
+            v-for="tab in statusTabs"
+            :key="tab.value"
+            :class="['status-tab', { active: selectedStatus === tab.value }]"
+            @click="selectedStatus = tab.value"
+          >
+            {{ tab.label }} {{ tab.count }}
+          </button>
+        </div>
+
         <div v-if="loading" class="loading-center">
           <div class="spinner"></div>
         </div>
 
-        <div v-else-if="enrollments.length" class="enrollment-list fade-in">
-          <div v-for="item in enrollments" :key="item.id" class="enrollment-card">
+        <div v-else-if="filteredEnrollments.length" class="enrollment-list fade-in">
+          <div v-for="item in filteredEnrollments" :key="item.id" class="enrollment-card">
             <div class="enroll-thumb" :class="getThumbBg(item.course?.category)">
               <img :src="getThumbSrc(item.course)" :alt="item.course?.title" />
             </div>
@@ -73,7 +84,7 @@
 
         <div v-else class="empty-state">
           <p class="empty-icon">📭</p>
-          <p>수강 중인 강의가 없습니다.</p>
+          <p>{{ selectedStatus === 'PENDING' ? '승인 대기 강의가 없습니다.' : '승인된 강의가 없습니다.' }}</p>
           <router-link to="/courses" class="btn btn-primary" style="margin-top:16px;">
             강의 둘러보기
           </router-link>
@@ -95,8 +106,18 @@ const auth = useAuthStore()
 
 const enrollments = ref([])
 const loading = ref(true)
+const selectedStatus = ref('PENDING')
 
 const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
+const pendingEnrollments = computed(() => enrollments.value.filter(item => item.status === 'PENDING'))
+const activeEnrollments = computed(() => enrollments.value.filter(item => item.status === 'ACTIVE'))
+const filteredEnrollments = computed(() =>
+  selectedStatus.value === 'PENDING' ? pendingEnrollments.value : activeEnrollments.value
+)
+const statusTabs = computed(() => [
+  { value: 'PENDING', label: '신청 강의', count: pendingEnrollments.value.length },
+  { value: 'ACTIVE', label: '승인 강의', count: activeEnrollments.value.length }
+])
 
 const categoryConfig = {
   '백엔드': { bg: 'thumb-teal', badge: 'badge-teal', thumb: 'spring_boot' },
@@ -235,6 +256,28 @@ onMounted(async () => {
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 24px;
+}
+
+.status-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.status-tab {
+  padding: 9px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.status-tab.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .enrollment-list {

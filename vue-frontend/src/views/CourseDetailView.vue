@@ -139,8 +139,8 @@ const thumbSrc = computed(() => {
 const buttonLabel = computed(() => {
   if (isInstructor.value) return '강사 계정은 신청 불가'
   if (enrollmentStatus.value === 'ACTIVE') return '내 수강 목록으로 이동'
-  if (enrollmentStatus.value === 'PENDING') return '신청 완료 · 결제 처리 중'
-  return '결제하고 수강하기'
+  if (enrollmentStatus.value === 'PENDING') return '관리자 승인 대기 중'
+  return '관리자에게 수강 신청하기'
 })
 
 const buttonDisabled = computed(() => {
@@ -160,10 +160,10 @@ const helperText = computed(() => {
   }
 
   if (enrollmentStatus.value === 'PENDING') {
-    return '수강 신청이 접수되었습니다. 결제/처리 상태가 반영되면 내 수강 목록에서 확인할 수 있습니다.'
+    return '수강 신청이 관리자에게 전달되었습니다. 승인 후 내 강의 목록에서 확인할 수 있습니다.'
   }
 
-  return '결제를 진행하면 수강 신청이 함께 처리됩니다.'
+  return '관리자가 승인하면 내 강의 목록에 추가됩니다.'
 })
 
 async function loadEnrollmentStatus() {
@@ -218,14 +218,23 @@ async function handlePrimaryAction() {
     return
   }
 
+  const confirmed = window.confirm(
+    '이 강의를 수강 신청하시겠습니까?\n관리자 승인 후 내 강의 목록에 추가됩니다.'
+  )
+
+  if (!confirmed) {
+    return
+  }
+
   enrolling.value = true
 
   try {
     await enrollmentApi.enroll(course.value.id)
     enrollmentStatus.value = 'PENDING'
+    window.alert('수강 신청이 관리자에게 전달되었습니다.')
   } catch (e) {
     console.error('[CourseDetail] enroll failed:', e)
-    enrollError.value = e.response?.data?.message || '결제/수강 신청에 실패했습니다.'
+    enrollError.value = e.response?.data?.message || '수강 신청에 실패했습니다.'
   } finally {
     enrolling.value = false
   }
