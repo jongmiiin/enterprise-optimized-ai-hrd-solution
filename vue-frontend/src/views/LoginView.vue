@@ -4,7 +4,7 @@
       <!-- 좌측 브랜딩 -->
       <div class="login-left">
         <div class="brand">
-          <img src="@/assets/images/logo/main_logo.png" alt="SkillFit AI" class="brand-logo" />
+          <img src="@/assets/images/logo/main_logo.png" alt="SkillFit" class="brand-logo" />
           <span class="brand-name">SkillFit</span>
         </div>
         <div class="brand-content">
@@ -40,7 +40,7 @@
           <!-- 회원가입 영역 -->
           <div v-else class="section">
             <h3 class="section-title">회원가입</h3>
-            <p class="register-desc">SkillFit AI를 시작할 계정 정보를 입력해 주세요.</p>
+            <p class="register-desc">SkillFit을 시작할 계정 정보를 입력해 주세요.</p>
             <form @submit.prevent="handleRegister" class="form">
               <div class="form-group">
                 <label class="form-label">이름</label>

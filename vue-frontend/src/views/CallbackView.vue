@@ -3,7 +3,7 @@
     <main class="callback-card" role="status" aria-live="polite">
       <div class="callback-brand">
         <img src="@/assets/images/logo/main_logo.png" alt="" />
-        <strong>SkillFit AI</strong>
+        <strong>SkillFit</strong>
       </div>
 
       <div v-if="status === 'processing'" class="spinner" aria-hidden="true"></div>
