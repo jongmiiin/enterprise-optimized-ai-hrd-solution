@@ -48,7 +48,18 @@ export const useAuthStore = defineStore('auth', () => {
     sessionStorage.removeItem('user')
 
     if (redirect) {
-      window.location.href = '/login'
+      // Auth Server의 SSO 세션(JSESSIONID)까지 끊어야 재로그인 시 계정을 바꿀 수 있다.
+      // 세션 쿠키가 SameSite=Lax라 fetch/iframe으로는 전송되지 않으므로,
+      // 팝업으로 실제 top-level GET 이동을 발생시켜 로그아웃을 완료한 뒤 닫는다.
+      try {
+        const popup = window.open(`${AUTH_SERVER_URL}/logout`, 'sf-logout', 'width=1,height=1,left=-1000,top=-1000')
+        setTimeout(() => {
+          try { popup?.close() } catch { /* noop */ }
+          window.location.href = '/login'
+        }, 600)
+      } catch {
+        window.location.href = '/login'
+      }
     }
   }
 
