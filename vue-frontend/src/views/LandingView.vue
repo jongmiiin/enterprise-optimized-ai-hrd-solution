@@ -6,111 +6,67 @@
     <section class="hero">
       <div class="hero-inner">
         <div class="hero-content fade-in-up">
-          <span class="hero-badge">MSA 기반 교육 플랫폼</span>
-          <h1 class="hero-title">배움을 더 스마트하게,<br>커리어를 더 빠르게</h1>
-          <p class="hero-desc">개발, 디자인, 비즈니스 분야의 전문가 강의를 수강하고 실력을 키워보세요.</p>
+          <span class="hero-badge">AI-POWERED HRD</span>
+          <h1 class="hero-title">직무에 맞는 AI 교육,<br><em>더 똑똑하게</em></h1>
+          <p class="hero-desc">직원에게는 필요한 교육을, HR에게는 더 정확한 교육 투자를 제공합니다.</p>
           <div class="hero-actions">
             <router-link to="/login" class="btn btn-primary btn-lg">무료로 시작하기</router-link>
             <router-link to="/courses" class="btn btn-outline btn-lg">강의 둘러보기</router-link>
           </div>
-          <div class="hero-stats">
-            <div class="stat"><span class="stat-num">1,200+</span><span class="stat-label">강의</span></div>
-            <div class="stat"><span class="stat-num">340+</span><span class="stat-label">강사</span></div>
-            <div class="stat"><span class="stat-num">28,000+</span><span class="stat-label">수강생</span></div>
+          <div class="hero-proof">
+            <span>직무·역량 기반 추천</span>
+            <span>HR 맞춤 설계</span>
+            <span>빠른 수강 경험</span>
           </div>
         </div>
         <div class="hero-visual fade-in">
-          <img src="@/assets/images/logo/main_logo.png" alt="LearnNexus" class="hero-logo" />
-        </div>
-      </div>
-    </section>
-
-    <!-- 인기 강의 -->
-    <section class="popular-section">
-      <div class="section-inner">
-        <div class="section-header">
-          <h2 class="section-title">인기 강의</h2>
-          <router-link to="/login" class="section-link">전체 보기 →</router-link>
-        </div>
-        <div class="course-grid">
-          <div v-for="course in featuredCourses" :key="course.id" class="course-card-landing">
-            <div class="card-thumb" :class="course.thumbBg">
-              <img :src="course.thumbSrc" :alt="course.title" class="thumb-img" />
+          <div class="roadmap-card" aria-label="AI 맞춤 학습 로드맵 과정">
+            <div class="roadmap-heading">
+              <span class="roadmap-eyebrow">PERSONALIZED AI LEARNING</span>
+              <strong>나만의 성장 로드맵</strong>
             </div>
-            <div class="card-body">
-              <span class="badge" :class="course.badgeClass">{{ course.category }}</span>
-              <h3 class="card-title">{{ course.title }}</h3>
-              <div class="card-meta">
-                <span class="instructor">{{ course.instructor }}</span>
-                <span class="price">{{ course.price }}</span>
-              </div>
+            <ol class="roadmap-steps">
+              <li class="roadmap-step">
+                <span class="step-icon step-icon-blue" aria-hidden="true">01</span>
+                <span class="step-copy"><small>STEP 1</small><strong>현재 역량</strong></span>
+              </li>
+              <li class="roadmap-step">
+                <span class="step-icon step-icon-purple" aria-hidden="true">02</span>
+                <span class="step-copy"><small>STEP 2</small><strong>AI 역량 분석</strong></span>
+              </li>
+              <li class="roadmap-step">
+                <span class="step-icon step-icon-teal" aria-hidden="true">03</span>
+                <span class="step-copy"><small>STEP 3</small><strong>맞춤 학습 로드맵</strong></span>
+              </li>
+            </ol>
+            <div class="roadmap-progress">
+              <span>성장 경로 설계 완료</span>
+              <strong>100%</strong>
             </div>
+          </div>
+        </div>
+        <div class="hero-benefits">
+          <div class="hero-benefit">
+            <span class="benefit-icon">✦</span>
+            <span><strong>직무·역량 기반 추천</strong><small>직원의 현재 역량에 꼭 맞는 과정을 제안합니다.</small></span>
+          </div>
+          <div class="hero-benefit">
+            <span class="benefit-icon">✓</span>
+            <span><strong>간편한 승인·관리</strong><small>신청부터 승인과 결제까지 한 흐름으로 연결합니다.</small></span>
+          </div>
+          <div class="hero-benefit">
+            <span class="benefit-icon">↗</span>
+            <span><strong>교육 투자 효율 향상</strong><small>필요한 교육에 예산을 집중할 수 있습니다.</small></span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 특징 섹션 -->
-    <section class="features-section">
-      <div class="section-inner">
-        <h2 class="section-title center">왜 LearnNexus인가요?</h2>
-        <div class="features-grid">
-          <div v-for="f in features" :key="f.title" class="feature-card">
-            <div class="feature-icon">{{ f.icon }}</div>
-            <h3 class="feature-title">{{ f.title }}</h3>
-            <p class="feature-desc">{{ f.desc }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="cta-section">
-      <div class="cta-inner">
-        <h2>지금 바로 시작하세요</h2>
-        <p>수천 명의 개발자들이 LearnNexus와 함께 성장하고 있습니다.</p>
-        <router-link to="/login" class="btn btn-primary btn-lg">무료로 시작하기</router-link>
-      </div>
-    </section>
-
-    <!-- 푸터 -->
-    <footer class="footer">
-      <div class="footer-inner">
-        <div class="footer-logo">
-          <img src="@/assets/images/logo/main_logo.png" alt="LearnNexus" />
-          <span>LearnNexus</span>
-        </div>
-        <p class="footer-copy">© 2026 LearnNexus. All rights reserved.</p>
-      </div>
-    </footer>
   </div>
 </template>
 
 <script setup>
 import AppHeader from '@/components/AppHeader.vue'
-
-import springImg   from '@/assets/images/courses/spring_boot.png'
-import vueImg      from '@/assets/images/courses/vue_js.png'
-import k8sImg      from '@/assets/images/courses/kubernetes.png'
-import dockerImg   from '@/assets/images/courses/docker.png'
-import pythonImg   from '@/assets/images/courses/python.png'
-import genaiImg    from '@/assets/images/courses/generative_ai.png'
-
-const featuredCourses = [
-  { id:1, title:'Spring Boot MSA 완성', category:'백엔드',    instructor:'김강사', price:'₩89,000', thumbSrc: springImg, thumbBg:'thumb-teal',   badgeClass:'badge-teal'   },
-  { id:2, title:'Vue 3 실전 프로젝트',  category:'프론트엔드', instructor:'이강사', price:'₩69,000', thumbSrc: vueImg,    thumbBg:'thumb-teal',   badgeClass:'badge-teal'   },
-  { id:3, title:'Kubernetes 운영 가이드',category:'DevOps',   instructor:'박강사', price:'₩99,000', thumbSrc: k8sImg,    thumbBg:'thumb-blue',   badgeClass:'badge-blue'   },
-  { id:4, title:'Docker 컨테이너 실전', category:'DevOps',    instructor:'정강사', price:'₩79,000', thumbSrc: dockerImg, thumbBg:'thumb-blue',   badgeClass:'badge-blue'   },
-  { id:5, title:'Python 데이터 분석',   category:'데이터',    instructor:'최강사', price:'₩59,000', thumbSrc: pythonImg, thumbBg:'thumb-purple', badgeClass:'badge-purple' },
-  { id:6, title:'Generative AI 실전',   category:'AI',        instructor:'한강사', price:'₩75,000', thumbSrc: genaiImg,  thumbBg:'thumb-pink',   badgeClass:'badge-pink'   },
-]
-
-const features = [
-  { icon:'🚀', title:'실무 중심 커리큘럼', desc:'현업 전문가가 직접 설계한 실무 중심 강의로 빠르게 성장하세요.' },
-  { icon:'🎯', title:'맞춤 강의 추천', desc:'AI 기반 추천 시스템이 수강 이력을 분석해 딱 맞는 강의를 추천합니다.' },
-  { icon:'💳', title:'간편한 수강 신청', desc:'원클릭 결제와 즉시 수강으로 학습을 바로 시작하세요.' },
-  { icon:'📱', title:'언제 어디서나', desc:'PC, 태블릿, 모바일 어디서든 끊김 없이 학습하세요.' },
-]
 </script>
 
 <style scoped>
@@ -118,176 +74,182 @@ const features = [
 
 /* 히어로 */
 .hero {
-  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 50%, #f0f9ff 100%);
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at 75% 34%, rgba(117, 86, 255, 0.10), transparent 30%),
+    linear-gradient(135deg, #f8f9ff 0%, #f5f7ff 55%, #f4fbff 100%);
   border-bottom: 1px solid var(--color-border);
-  padding: 80px 0 64px;
+  padding: clamp(64px, 8vh, 104px) 0 56px;
 }
 .hero-inner {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 clamp(32px, 5vw, 80px);
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 48px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(460px, 0.92fr);
+  gap: clamp(56px, 7vw, 112px);
   align-items: center;
 }
 .hero-badge {
   display: inline-block;
-  padding: 5px 14px;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border-radius: 20px;
+  padding: 0;
+  background: transparent;
+  color: #6650e8;
+  border-radius: 0;
   font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 16px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin-bottom: 18px;
 }
 .hero-title {
-  font-size: 42px;
+  font-size: clamp(48px, 4.2vw, 64px);
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.5px;
   color: var(--color-text-primary);
   margin-bottom: 16px;
 }
+.hero-title em { color: #6350e8; font-style: normal; }
 .hero-desc {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--color-text-secondary);
   line-height: 1.7;
-  max-width: 460px;
-  margin-bottom: 28px;
+  max-width: 620px;
+  margin-bottom: 34px;
 }
 .hero-actions {
   display: flex;
   gap: 12px;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
-.btn-lg { padding: 12px 28px; font-size: 15px; }
-.hero-stats {
+.btn-lg { padding: 14px 32px; font-size: 16px; }
+.hero-proof {
   display: flex;
-  gap: 36px;
+  flex-wrap: wrap;
+  gap: 10px 20px;
 }
-.stat { display: flex; flex-direction: column; gap: 2px; }
-.stat-num { font-size: 22px; font-weight: 700; color: var(--color-primary); }
-.stat-label { font-size: 12px; color: var(--color-text-secondary); }
+.hero-proof span { color: var(--color-text-secondary); font-size: 13px; }
+.hero-proof span::before { content: '✓'; margin-right: 6px; color: #6650e8; font-weight: 700; }
 .hero-visual {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.hero-logo {
-  width: 200px;
-  height: 200px;
-  object-fit: contain;
+.roadmap-card {
+  width: 100%;
+  max-width: 560px;
+  padding: clamp(28px, 2.4vw, 38px);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(92, 113, 145, 0.16);
   border-radius: 24px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 24px 60px rgba(61, 84, 122, 0.14);
 }
-
-/* 강의 섹션 */
-.popular-section { padding: 64px 0; }
-.section-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-.section-header {
+.roadmap-heading { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+.roadmap-heading strong { font-size: 24px; color: var(--color-text-primary); }
+.roadmap-eyebrow {
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.roadmap-steps { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.roadmap-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 78px;
+  padding: 14px 18px;
+  background: #f8fbff;
+  border: 1px solid #e8eef6;
+  border-radius: 16px;
+}
+.roadmap-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 35px;
+  bottom: -12px;
+  width: 2px;
+  height: 13px;
+  background: #dce6f3;
+}
+.step-icon {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.step-icon-blue { color: #2563eb; background: #e8f1ff; }
+.step-icon-purple { color: #7c3aed; background: #f1eafe; }
+.step-icon-teal { color: #087f5b; background: #e4f8f1; }
+.step-copy { display: flex; flex-direction: column; gap: 3px; }
+.step-copy small { color: var(--color-text-secondary); font-size: 10px; font-weight: 700; letter-spacing: 0.7px; }
+.step-copy strong { color: var(--color-text-primary); font-size: 17px; }
+.roadmap-progress {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #edf1f6;
+  color: var(--color-text-secondary);
+  font-size: 13px;
 }
-.section-title { font-size: 22px; font-weight: 700; color: var(--color-text-primary); }
-.section-title.center { text-align: center; margin-bottom: 40px; }
-.section-link { font-size: 14px; color: var(--color-primary); font-weight: 500; }
-.section-link:hover { text-decoration: underline; }
-
-.course-grid {
+.roadmap-progress strong { color: var(--color-primary); }
+.hero-benefits {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: clamp(28px, 4vw, 64px);
+  width: 100%;
+  margin-top: clamp(28px, 5vh, 56px);
+  padding-top: 32px;
+  border-top: 1px solid rgba(88, 99, 126, 0.12);
 }
-.course-card-landing {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: var(--transition);
-}
-.course-card-landing:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-.card-thumb {
-  height: 110px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-.thumb-teal   { background: #E1F5EE; }
-.thumb-blue   { background: #E6F1FB; }
-.thumb-purple { background: #EEEDFE; }
-.thumb-pink   { background: #FBEAF0; }
-.thumb-img { width: 100%; height: 100%; object-fit: contain; padding: 14px; }
-.card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
-.card-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); line-height: 1.4; }
-.card-meta { display: flex; justify-content: space-between; align-items: center; }
-.instructor { font-size: 12px; color: var(--color-text-secondary); }
-.price { font-size: 14px; font-weight: 600; color: var(--color-primary); }
-
-/* 특징 */
-.features-section { padding: 64px 0; background: var(--color-bg-primary); }
-.features-grid {
+.hero-benefit { display: flex; align-items: flex-start; gap: 15px; }
+.benefit-icon {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  place-items: center;
+  flex: 0 0 42px;
+  height: 42px;
+  color: #6650e8;
+  background: #efedff;
+  border-radius: 9px;
+  font-size: 16px;
+  font-weight: 700;
 }
-.feature-card {
-  padding: 28px 24px;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  transition: var(--transition);
-}
-.feature-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.feature-icon { font-size: 32px; margin-bottom: 12px; }
-.feature-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
-.feature-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; }
+.hero-benefit > span:last-child { display: flex; flex-direction: column; gap: 7px; }
+.hero-benefit strong { color: var(--color-text-primary); font-size: 18px; line-height: 1.35; }
+.hero-benefit small { color: var(--color-text-secondary); font-size: 15px; line-height: 1.65; }
 
-/* CTA */
-.cta-section {
-  padding: 80px 0;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  text-align: center;
+@media (max-width: 900px) {
+  .hero { min-height: auto; padding: 64px 0 56px; }
+  .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .hero-content { text-align: center; }
+  .hero-desc { margin-right: auto; margin-left: auto; }
+  .hero-actions, .hero-proof { justify-content: center; }
+  .roadmap-card { max-width: 560px; }
+  .hero-benefits { gap: 18px; }
 }
-.cta-inner { max-width: 600px; margin: 0 auto; padding: 0 24px; }
-.cta-inner h2 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 12px; }
-.cta-inner p { font-size: 16px; color: rgba(255,255,255,0.8); margin-bottom: 32px; }
-.cta-inner .btn-primary {
-  background: #fff;
-  color: var(--color-primary);
-  border-color: #fff;
-  font-weight: 600;
-}
-.cta-inner .btn-primary:hover { background: #f0f7ff; }
 
-/* 푸터 */
-.footer {
-  background: var(--color-text-primary);
-  padding: 32px 0;
+@media (max-width: 600px) {
+  .hero { padding: 48px 0 44px; }
+  .hero-inner { padding-right: 18px; padding-left: 18px; }
+  .hero-title { font-size: 36px; }
+  .hero-desc { font-size: 16px; }
+  .hero-actions { flex-direction: column; }
+  .hero-actions .btn { width: 100%; text-align: center; }
+  .hero-proof { gap: 8px 14px; }
+  .roadmap-card { padding: 20px; border-radius: 20px; }
+  .roadmap-step { padding: 10px 12px; }
+  .hero-benefits { grid-template-columns: 1fr; margin-top: 4px; }
 }
-.footer-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.footer-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-}
-.footer-logo img { width: 28px; height: 28px; border-radius: 6px; }
-.footer-copy { font-size: 13px; color: rgba(255,255,255,0.5); }
 </style>
