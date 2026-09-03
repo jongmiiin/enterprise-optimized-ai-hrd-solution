@@ -60,8 +60,7 @@ const navLinks = computed(() => {
   if (isInstructor.value) {
     return [
       { to: '/courses', label: '교육과정', active: inCourses },
-      { to: '/mypage', label: '승인 관리', active: route.path === '/mypage' },
-      { to: '/courses/new', label: '과정 등록', active: route.path === '/courses/new' }
+      { to: '/mypage', label: '승인 관리', active: route.path === '/mypage' }
     ]
   }
 
