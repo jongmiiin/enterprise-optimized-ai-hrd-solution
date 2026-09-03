@@ -69,6 +69,15 @@ public class User {
     @Builder.Default
     private Map<String, Integer> skills = new HashMap<>();
 
+    // 역량 오각형(radar)용 5개 역량 (ai-capability-model 체계, 영문키, 1~5)
+    // 키: aiLiteracy, jobAiApplication, promptSkill, dataLiteracy, aiEthicsSecurity
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_competencies", joinColumns = @JoinColumn(name = "user_id"))
+    @MapKeyColumn(name = "competency_key")
+    @Column(name = "score")
+    @Builder.Default
+    private Map<String, Integer> competencies = new HashMap<>();
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -91,5 +100,10 @@ public class User {
         this.careerGoal = careerGoal;
         this.competencyScores = competencyScores;
         this.skills = skills;
+    }
+
+    // radar용 5개 역량(1~5) 세팅 (DataInitializer)
+    public void applyCompetencies(Map<String, Integer> competencies) {
+        this.competencies = competencies;
     }
 }

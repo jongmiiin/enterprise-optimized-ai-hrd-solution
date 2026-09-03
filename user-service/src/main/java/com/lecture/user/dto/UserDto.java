@@ -71,6 +71,7 @@ public class UserDto {
         private String careerGoal;
         private java.util.Map<String, Integer> competencyScores;
         private java.util.Map<String, Integer> skills;
+        private java.util.Map<String, Integer> competencies;  // radar용 영문키 5개(1~5)
 
         public static CompetencyProfileResponse from(User user) {
             return CompetencyProfileResponse.builder()
@@ -83,6 +84,7 @@ public class UserDto {
                     .careerGoal(user.getCareerGoal())
                     .competencyScores(user.getCompetencyScores())
                     .skills(user.getSkills())
+                    .competencies(user.getCompetencies())
                     .build();
         }
     }

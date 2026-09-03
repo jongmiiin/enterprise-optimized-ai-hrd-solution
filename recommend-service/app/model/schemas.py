@@ -49,6 +49,8 @@ class RecommendResponse(BaseModel):
     overallLevel: Optional[str] = None
     careerGoal: Optional[str] = None
     competencyScores: Dict[str, int] = Field(default_factory=dict)
+    # 마이페이지 역량 오각형(radar)용 5개 역량 (영문키 aiLiteracy 등, 1~5)
+    competencies: Dict[str, int] = Field(default_factory=dict)
     recommendedCourses: List[RecommendedCourseResponse]
     basedOnCategory: Optional[CourseCategory] = None
     message: str
