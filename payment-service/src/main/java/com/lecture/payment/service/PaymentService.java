@@ -39,6 +39,17 @@ public class PaymentService {
         log.info("[PaymentService] 결제 요청 - userId: {}, courseId: {}, amount: {}",
                 request.getUserId(), request.getCourseId(), request.getAmount());
 
+        Payment existingPayment = paymentRepository
+                .findFirstByUserIdAndCourseIdOrderByIdDesc(request.getUserId(), request.getCourseId())
+                .orElse(null);
+        if (existingPayment != null && existingPayment.getStatus() == Payment.Status.COMPLETED) {
+            log.info("[PaymentService] 중복 결제 요청에 기존 결과 반환 - paymentId: {}", existingPayment.getId());
+            return PaymentDto.InternalPaymentResult.builder()
+                    .paymentId(existingPayment.getId())
+                    .status(existingPayment.getStatus().name())
+                    .build();
+        }
+
         Payment payment = paymentRepository.save(
                 Payment.builder()
                         .userId(request.getUserId())

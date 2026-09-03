@@ -58,6 +58,30 @@ public class EnrollmentController {
     }
 
     /**
+     * GET /enrollments/admin?status=PENDING - HR의 상태별 교육 신청 목록 조회
+     */
+    @GetMapping("/admin")
+    public ResponseEntity<EnrollmentDto.ApiResponse<List<EnrollmentDto.AdminEnrollmentResponse>>> getAdminEnrollments(
+            @RequestParam(defaultValue = "PENDING") com.lecture.enrollment.entity.Enrollment.Status status,
+            @RequestHeader("X-User-Id") Long requesterId) {
+
+        return ResponseEntity.ok(EnrollmentDto.ApiResponse.success(
+                enrollmentService.getAdminEnrollments(requesterId, status)));
+    }
+
+    /**
+     * POST /enrollments/{id}/approve - HR 승인과 결제를 한 번에 처리
+     */
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<EnrollmentDto.ApiResponse<EnrollmentDto.ApprovalResponse>> approveEnrollment(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long requesterId) {
+
+        return ResponseEntity.ok(EnrollmentDto.ApiResponse.success(
+                enrollmentService.approveEnrollment(requesterId, id)));
+    }
+
+    /**
      * GET /enrollments/internal/history/{userId} - 수강 이력 조회 (Recommend Service용)
      */
     @GetMapping("/internal/history/{userId}")
