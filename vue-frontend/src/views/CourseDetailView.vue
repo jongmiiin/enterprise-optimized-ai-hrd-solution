@@ -248,6 +248,9 @@ async function handlePrimaryAction() {
     return
   }
 
+  const confirmed = window.confirm(`"${course.value.title}" 과정을 수강 신청하시겠어요?`)
+  if (!confirmed) return
+
   enrolling.value = true
 
   try {

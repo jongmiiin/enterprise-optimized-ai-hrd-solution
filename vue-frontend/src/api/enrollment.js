@@ -12,5 +12,13 @@ export const enrollmentApi = {
   },
   getRecommendations(userId) {
     return api.get(`/api/recommend/${userId}`)
+  },
+
+  // HR 승인 관리
+  getAdminEnrollments(status = 'PENDING') {
+    return api.get('/api/enrollments/admin', { params: { status } })
+  },
+  approve(enrollmentId) {
+    return api.post(`/api/enrollments/${enrollmentId}/approve`)
   }
 }
