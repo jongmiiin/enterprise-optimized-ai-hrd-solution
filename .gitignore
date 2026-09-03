@@ -1,0 +1,53 @@
+# ===== macOS =====
+.DS_Store
+**/.DS_Store
+
+# ===== IDE =====
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+out/
+
+# ===== Java / Gradle =====
+.gradle/
+build/
+bin/
+HELP.md
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===== Python (recommend-service) =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ===== Node / Vue (vue-frontend) =====
+node_modules/
+dist/
+.vite/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Env / Secrets (.env 무시, 예시는 커밋) =====
+.env
+*.env
+!.env.example
+
+# ===== Docker 이미지 배포본 (대용량) =====
+infra-images.tar
+msa-lecture-images.part.*
+*.tar
+*.tar.gz
+
+# ===== Logs =====
+*.log
+logs/
