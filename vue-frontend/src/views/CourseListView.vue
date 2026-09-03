@@ -97,7 +97,7 @@ const { categories, loading } = courseStore
 
 const sortOptions = [
   { value: 'recommend', label: '추천순' },
-  { value: 'popular', label: '인기순' },
+  { value: 'difficulty', label: '난이도순' },
   { value: 'price', label: '가격순' }
 ]
 const selectedSort = ref('recommend')
@@ -114,8 +114,8 @@ const filteredCourses = computed(() => {
 const sortedCourses = computed(() => {
   const list = [...filteredCourses.value]
 
-  if (selectedSort.value === 'popular') {
-    return list.sort((a, b) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0))
+  if (selectedSort.value === 'difficulty') {
+    return list.sort((a, b) => (a.enrollmentCount || 1) - (b.enrollmentCount || 1))
   }
 
   if (selectedSort.value === 'price') {

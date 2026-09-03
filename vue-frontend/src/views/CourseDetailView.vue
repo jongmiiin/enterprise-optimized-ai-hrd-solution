@@ -14,7 +14,13 @@
 
           <div class="detail-meta">
             <span>교육 담당&nbsp; {{ displayInstructorName }}</span>
-            <span>수강생&nbsp; {{ displayEnrollmentCount }}명</span>
+            <span class="difficulty-wrap">
+              난이도
+              <DifficultyLevel
+                :level="displayDifficulty"
+                style="--dot-color: #c9bdff; --dot-empty: rgba(255, 255, 255, 0.28)"
+              />
+            </span>
           </div>
 
           <div class="benefit-row">
@@ -84,6 +90,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
+import DifficultyLevel from '@/components/DifficultyLevel.vue'
 import { useCourseStore } from '@/store/course.js'
 import { enrollmentApi } from '@/api/enrollment.js'
 import { useAuthStore } from '@/store/auth.js'
@@ -125,13 +132,13 @@ const displayInstructorName = computed(() => {
   )
 })
 
-const displayEnrollmentCount = computed(() => {
+const displayDifficulty = computed(() => {
   const value = Number(
     course.value?.enrollmentCount ??
     course.value?.enrollment_count ??
-    0
+    1
   )
-  return Number.isNaN(value) ? 0 : value.toLocaleString()
+  return Number.isNaN(value) ? 1 : value
 })
 
 const displayPrice = computed(() => {

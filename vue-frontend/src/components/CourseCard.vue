@@ -18,7 +18,10 @@
 
       <div class="card-meta">
         <span class="price">₩{{ Number(course.price).toLocaleString() }}</span>
-        <span class="enrolled">◯ {{ course.enrollmentCount?.toLocaleString() || 0 }}명 수강</span>
+        <span class="difficulty-wrap">
+          <span class="difficulty-label">난이도</span>
+          <DifficultyLevel :level="course.enrollmentCount" />
+        </span>
       </div>
     </div>
   </router-link>
@@ -26,6 +29,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import DifficultyLevel from './DifficultyLevel.vue'
 
 const props = defineProps({
   course: { type: Object, required: true },
@@ -172,7 +176,12 @@ const thumbSrc = computed(() => {
   font-weight: 800;
   color: var(--sf-ink);
 }
-.enrolled {
+.difficulty-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.difficulty-label {
   color: var(--sf-subtle);
   font-size: 10px;
 }
