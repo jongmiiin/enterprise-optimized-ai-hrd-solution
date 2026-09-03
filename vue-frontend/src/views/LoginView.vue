@@ -33,13 +33,14 @@
             <button type="button" class="oauth-button" @click="handleOAuth">계정으로 로그인 <span aria-hidden="true">→</span></button>
             <div class="switch-link">
               계정이 없으신가요?
-              <button class="text-btn" @click="showRegister = true">회원가입</button>
+              <button class="text-btn" @click="setAuthMode('register')">회원가입</button>
             </div>
           </div>
 
           <!-- 회원가입 영역 -->
           <div v-else class="section">
             <h3 class="section-title">회원가입</h3>
+            <p class="register-desc">SkillFit AI를 시작할 계정 정보를 입력해 주세요.</p>
             <form @submit.prevent="handleRegister" class="form">
               <div class="form-group">
                 <label class="form-label">이름</label>
@@ -56,20 +57,20 @@
               <div class="form-group">
                 <label class="form-label">역할</label>
                 <select v-model="registerForm.role" class="form-input">
-                  <option value="STUDENT">학생</option>
-                  <option value="INSTRUCTOR">강사</option>
+                  <option value="STUDENT">직원</option>
+                  <option value="INSTRUCTOR">HR 담당자</option>
                 </select>
               </div>
               <div v-if="error" class="error-msg">{{ error }}</div>
               <div v-if="success" class="success-msg">{{ success }}</div>
-              <button type="submit" class="btn btn-primary btn-full" :disabled="loading">
+              <button type="submit" class="oauth-button register-button" :disabled="loading">
                 <span v-if="loading">가입 중...</span>
                 <span v-else>회원가입</span>
               </button>
             </form>
             <div class="switch-link">
               이미 계정이 있으신가요?
-              <button class="text-btn" @click="showRegister = false">로그인</button>
+              <button class="text-btn" @click="setAuthMode('login')">로그인</button>
             </div>
           </div>
 
@@ -86,7 +87,7 @@ import { authApi } from '@/api/auth.js'
 
 const auth = useAuthStore()
 
-const showRegister = ref(false)
+const showRegister = ref(window.location.hash === '#register')
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
@@ -98,6 +99,13 @@ function handleOAuth() {
   auth.redirectToLogin()
 }
 
+function setAuthMode(mode) {
+  showRegister.value = mode === 'register'
+  window.history.replaceState(null, '', mode === 'register' ? '#register' : window.location.pathname)
+  error.value = ''
+  success.value = ''
+}
+
 async function handleRegister() {
   error.value = ''
   success.value = ''
@@ -107,8 +115,7 @@ async function handleRegister() {
     success.value = '회원가입 완료! 로그인 페이지로 이동합니다.'
     registerForm.value = { name: '', email: '', password: '', role: 'STUDENT' }
     setTimeout(() => {
-      showRegister.value = false
-      success.value = ''
+      setAuthMode('login')
     }, 2000)
   } catch (e) {
     error.value = e.response?.data?.message || '회원가입에 실패했습니다.'
@@ -219,6 +226,7 @@ async function handleRegister() {
 
 .section-title { font-size: clamp(36px, 2.7vw, 43px); font-weight: 750; color: var(--color-text-primary); line-height: 1.25; letter-spacing: -1.4px; margin-bottom: 0; white-space: nowrap; }
 .section-desc { font-size: 17px; line-height: 1.65; color: var(--color-text-secondary); margin-bottom: 12px; text-align: left; }
+.register-desc { margin: -4px 0 12px; color: var(--color-text-secondary); font-size: 16px; line-height: 1.65; }
 .oauth-button {
   display: flex;
   align-items: center;
@@ -239,13 +247,14 @@ async function handleRegister() {
 }
 .oauth-button:hover { transform: translateY(-2px); box-shadow: 0 13px 28px rgba(103, 76, 232, 0.30); }
 
-.form { display: flex; flex-direction: column; gap: 14px; }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-label { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); }
+.form { display: flex; flex-direction: column; gap: 18px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-label { font-size: 14px; font-weight: 700; color: #394150; }
 .form-input {
-  padding: 10px 14px;
+  min-height: 54px;
+  padding: 13px 16px;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   font-size: 16px;
   font-family: var(--font-sans);
   color: var(--color-text-primary);
@@ -254,7 +263,8 @@ async function handleRegister() {
   outline: none;
 }
 .form-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
-.btn-full { width: 100%; padding: 12px; font-size: 15px; justify-content: center; margin-top: 4px; }
+.register-button { margin-top: 2px; }
+.register-button:disabled { cursor: not-allowed; opacity: 0.65; transform: none; }
 
 .switch-link {
   text-align: center;
