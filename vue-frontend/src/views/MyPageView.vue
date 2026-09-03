@@ -1,51 +1,20 @@
 <template>
   <div class="page-wrapper">
     <AppHeader />
-    <div class="page-layout">
-      <aside class="sidebar">
-        <div class="sidebar-section">
-          <div class="sidebar-label">메뉴</div>
 
-          <router-link to="/courses" class="sidebar-item">
-            <span class="si-icon">📚</span> 강의 목록
-          </router-link>
-
-          <router-link
-            v-if="!isInstructor"
-            to="/enrollments"
-            class="sidebar-item"
-          >
-            <span class="si-icon">✅</span> 내 수강 목록
-          </router-link>
-
-          <router-link to="/mypage" class="sidebar-item active">
-            <span class="si-icon">⭐</span> 마이페이지
-          </router-link>
-        </div>
-
-        <div class="sidebar-section">
-          <div class="sidebar-label">계정</div>
-          <button class="sidebar-item sidebar-btn" @click="handleLogout">
-            <span class="si-icon">🚪</span> 로그아웃
-          </button>
-        </div>
-      </aside>
-
-      <main class="main-content">
-        <!-- 프로필 카드 -->
+    <main class="page shell">
+      <!-- 직원 화면 -->
+      <template v-if="!isInstructor">
         <div class="profile-card fade-in-up">
           <div class="profile-avatar">{{ auth.user?.name?.charAt(0) || '?' }}</div>
           <div class="profile-info">
             <h2 class="profile-name">{{ auth.user?.name || '사용자' }}</h2>
             <p class="profile-email">{{ auth.user?.email || '-' }}</p>
-            <span class="badge" :class="isInstructor ? 'badge-amber' : 'badge-blue'">
-              {{ isInstructor ? '강사' : '학생' }}
-            </span>
+            <span class="badge badge-indigo">직원</span>
           </div>
         </div>
 
-        <!-- 학생 화면 -->
-        <section v-if="!isInstructor" class="recommend-section">
+        <section class="recommend-section">
           <h3 class="section-title">추천 강의</h3>
 
           <p v-if="recommendMessage" class="recommend-message">
@@ -74,124 +43,128 @@
             아직 추천할 강의가 없습니다.
           </p>
         </section>
+      </template>
 
-        <!-- 강사 화면 -->
-        <section v-else class="instructor-section">
-          <div class="approval-panel">
-            <div class="section-head">
-              <h3 class="section-title">HR 교육 신청 승인</h3>
-              <span class="section-subtitle">학생의 신청을 승인하면 결제 후 수강 가능 상태로 변경됩니다.</span>
-            </div>
-
-            <p v-if="approvalLoading" class="empty-text">승인 대기 목록을 불러오는 중입니다.</p>
-            <p v-else-if="approvalError" class="empty-text">{{ approvalError }}</p>
-            <p v-else-if="!pendingEnrollments.length" class="empty-text">승인 대기 신청이 없습니다.</p>
-
-            <div v-else class="approval-list">
-              <div v-for="item in pendingEnrollments" :key="item.enrollmentId" class="approval-item">
-                <div>
-                  <strong>{{ item.userName }}</strong>
-                  <span>{{ item.userEmail }}</span>
-                </div>
-                <div class="approval-course">
-                  <strong>{{ item.courseTitle }}</strong>
-                  <span>{{ item.courseCategory }} · {{ formatPrice(item.price) }}</span>
-                </div>
-                <button
-                  class="action-btn action-primary"
-                  :disabled="approvingId === item.enrollmentId"
-                  @click="approveEnrollment(item.enrollmentId)"
-                >
-                  {{ approvingId === item.enrollmentId ? '처리 중' : '승인' }}
-                </button>
-              </div>
-            </div>
+      <!-- HR 화면: 교육 승인 관리 -->
+      <template v-else>
+        <div class="title-row">
+          <div>
+            <p class="eyebrow">LEARNING ADMIN</p>
+            <h1 class="page-title">교육 신청을 검토해 주세요</h1>
+            <p class="page-desc">직원이 신청한 AI 추천 과정을 확인하고 승인할 수 있어요.</p>
           </div>
 
-          <div class="section-head">
-            <h3 class="section-title">내가 등록한 강좌</h3>
-            <span class="section-subtitle">등록한 강좌와 강좌별 수강생 수를 확인할 수 있습니다.</span>
+          <button type="button" class="btn btn-secondary" :disabled="listLoading" @click="loadApprovalLists">
+            {{ listLoading ? '불러오는 중...' : '새로고침' }}
+          </button>
+        </div>
+
+        <section class="metric-grid">
+          <div class="panel metric">
+            <div class="metric-label">승인 대기 <span class="dot dot-amber"></span></div>
+            <div class="metric-value">{{ pendingCount }}건</div>
           </div>
-
-          <div class="summary-cards">
-            <div class="summary-card">
-              <div class="summary-label">등록 강좌 수</div>
-              <div class="summary-value">{{ myCourses.length }}</div>
-            </div>
-            <div class="summary-card">
-              <div class="summary-label">총 수강생 수</div>
-              <div class="summary-value">{{ totalEnrollmentCount }}</div>
-            </div>
+          <div class="panel metric">
+            <div class="metric-label">예상 결제 금액</div>
+            <div class="metric-value">{{ expectedAmount.toLocaleString() }}원</div>
           </div>
-
-          <div v-if="instructorLoading" class="loading-row instructor-loading">
-            <div v-for="i in 3" :key="i" class="skeleton-card">
-              <div class="skeleton-thumb"></div>
-              <div class="skeleton-body">
-                <div class="skeleton-line short"></div>
-                <div class="skeleton-line"></div>
-              </div>
-            </div>
+          <div class="panel metric">
+            <div class="metric-label">이번 달 승인 <span class="dot dot-mint"></span></div>
+            <div class="metric-value">{{ approvedCount }}건</div>
           </div>
-
-          <div v-else-if="myCourses.length" class="instructor-course-list fade-in">
-            <div
-              v-for="course in myCourses"
-              :key="course.id"
-              class="instructor-course-card"
-            >
-              <div class="course-card-top">
-                <div>
-                  <h4 class="course-title">{{ course.title }}</h4>
-                  <p class="course-desc">{{ course.description || '설명이 없습니다.' }}</p>
-                </div>
-                <span
-                  class="status-badge"
-                  :class="course.status === 'ACTIVE' ? 'status-active' : 'status-inactive'"
-                >
-                  {{ course.status || 'UNKNOWN' }}
-                </span>
-              </div>
-
-              <div class="course-meta-grid">
-                <div class="meta-box">
-                  <div class="meta-label">카테고리</div>
-                  <div class="meta-value">{{ course.category || '-' }}</div>
-                </div>
-                <div class="meta-box">
-                  <div class="meta-label">가격</div>
-                  <div class="meta-value">{{ formatPrice(course.price) }}</div>
-                </div>
-                <div class="meta-box">
-                  <div class="meta-label">수강생 수</div>
-                  <div class="meta-value">
-                    {{ course.enrollment_count ?? course.enrollmentCount ?? 0 }}명
-                  </div>
-                </div>
-                <div class="meta-box">
-                  <div class="meta-label">강좌 ID</div>
-                  <div class="meta-value">#{{ course.id }}</div>
-                </div>
-              </div>
-
-              <div class="course-card-actions">
-                <router-link :to="`/courses/${course.id}`" class="action-btn action-primary">
-                  강좌 보기
-                </router-link>
-              </div>
-            </div>
-          </div>
-
-          <p v-else-if="instructorError" class="empty-text">
-            {{ instructorError }}
-          </p>
-
-          <p v-else class="empty-text">
-            아직 등록한 강좌가 없습니다.
-          </p>
         </section>
-      </main>
-    </div>
+
+        <div class="admin-toolbar">
+          <div>
+            <h2 class="section-title">교육 신청 현황</h2>
+            <p class="section-desc">승인 대기와 완료 내역을 한곳에서 확인하세요.</p>
+          </div>
+          <div class="segmented">
+            <button
+              type="button"
+              :class="['segment', { active: approvalTab === 'pending' }]"
+              @click="approvalTab = 'pending'"
+            >
+              승인 대기 {{ pendingCount }}
+            </button>
+            <button
+              type="button"
+              :class="['segment', { active: approvalTab === 'approved' }]"
+              @click="approvalTab = 'approved'"
+            >
+              승인 완료 {{ approvedCount }}
+            </button>
+          </div>
+        </div>
+
+        <p v-if="approvalActionError" class="action-error">{{ approvalActionError }}</p>
+
+        <div v-if="listLoading" class="panel data-table">
+          <div class="table-head approval-cols">
+            <span>직원</span>
+            <span>신청 교육</span>
+            <span>AI 추천</span>
+            <span>금액</span>
+            <span>상태</span>
+            <span>처리</span>
+          </div>
+          <div v-for="i in 3" :key="i" class="table-row approval-cols">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        </div>
+
+        <p v-else-if="listError" class="empty-text">{{ listError }}</p>
+
+        <section v-else class="panel data-table fade-in">
+          <div class="table-head approval-cols">
+            <span>직원</span>
+            <span>신청 교육</span>
+            <span>AI 추천</span>
+            <span>금액</span>
+            <span>상태</span>
+            <span>처리</span>
+          </div>
+
+          <div v-for="row in currentRows" :key="row.enrollmentId" class="table-row approval-cols">
+            <div>
+              <div class="cell-title">{{ row.userName }}</div>
+              <div class="cell-sub">{{ row.userEmail }}</div>
+            </div>
+            <span class="cell-title">{{ row.courseTitle }}</span>
+            <span class="recommend-score">{{ pseudoScore(row.enrollmentId) }}%</span>
+            <span>{{ Number(row.price).toLocaleString() }}원</span>
+            <span>
+              <span class="badge" :class="row.status === 'ACTIVE' ? 'badge-mint' : 'badge-amber'">
+                {{ row.status === 'ACTIVE' ? '승인 완료' : '승인 대기' }}
+              </span>
+            </span>
+            <span>
+              <button
+                v-if="row.status !== 'ACTIVE'"
+                type="button"
+                class="status-button"
+                :disabled="approvingId === row.enrollmentId"
+                @click="approveRow(row)"
+              >
+                {{ approvingId === row.enrollmentId ? '처리 중...' : '승인·결제' }}
+              </button>
+              <span v-else class="cell-sub">승인 완료</span>
+            </span>
+          </div>
+
+          <div v-if="!currentRows.length" class="empty-row">
+            해당 조건의 신청 내역이 없습니다.
+          </div>
+        </section>
+
+        <p class="helper-note">승인과 동시에 결제가 진행되며 직원의 수강 상태가 활성화됩니다.</p>
+      </template>
+    </main>
   </div>
 </template>
 
@@ -202,58 +175,110 @@ import AppHeader from '@/components/AppHeader.vue'
 import CourseCard from '@/components/CourseCard.vue'
 import { useAuthStore } from '@/store/auth.js'
 import { enrollmentApi } from '@/api/enrollment.js'
-import { courseApi } from '@/api/course.js'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
 
-/* 학생용 */
+/* 직원용 */
 const recommendations = ref([])
 const recommendLoading = ref(true)
 const recommendError = ref('')
 const recommendMessage = ref('')
 
-/* 강사용 */
-const myCourses = ref([])
-const instructorLoading = ref(true)
-const instructorError = ref('')
-const pendingEnrollments = ref([])
-const approvalLoading = ref(true)
-const approvalError = ref('')
+/* HR 승인 관리용 */
+const pendingRows = ref([])
+const activeRows = ref([])
+const listLoading = ref(true)
+const listError = ref('')
+const approvalTab = ref('pending')
 const approvingId = ref(null)
+const approvalActionError = ref('')
 
-const totalEnrollmentCount = computed(() =>
-  myCourses.value.reduce((sum, course) => {
-    const count = Number(course.enrollment_count ?? course.enrollmentCount ?? 0)
-    return sum + (Number.isNaN(count) ? 0 : count)
-  }, 0)
+const currentRows = computed(() => (approvalTab.value === 'pending' ? pendingRows.value : activeRows.value))
+const pendingCount = computed(() => pendingRows.value.length)
+const approvedCount = computed(() => activeRows.value.length)
+const expectedAmount = computed(() =>
+  pendingRows.value.reduce((sum, r) => sum + Number(r.price || 0), 0)
 )
+
+// 백엔드에 아직 AI 추천 점수 필드가 없어, 신청 ID 기반 고정 의사난수로 임시 표시
+function pseudoScore(enrollmentId) {
+  const id = Number(enrollmentId) || 0
+  return 85 + (id * 7) % 13
+}
+
+async function loadApprovalLists({ silent = false } = {}) {
+  if (!silent) {
+    listLoading.value = true
+    listError.value = ''
+  }
+
+  try {
+    const [pendingRes, activeRes] = await Promise.all([
+      enrollmentApi.getAdminEnrollments('PENDING'),
+      enrollmentApi.getAdminEnrollments('ACTIVE')
+    ])
+
+    pendingRows.value = Array.isArray(pendingRes.data?.data) ? pendingRes.data.data : []
+    activeRows.value = Array.isArray(activeRes.data?.data) ? activeRes.data.data : []
+  } catch (error) {
+    console.error('[MyPage] failed to load admin enrollments:', error)
+
+    if (!silent) {
+      if (error.response?.status === 403) {
+        listError.value = 'HR 담당자만 접근할 수 있습니다.'
+      } else {
+        listError.value = '신청 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      }
+    }
+  } finally {
+    if (!silent) listLoading.value = false
+  }
+}
+
+async function approveRow(row) {
+  approvalActionError.value = ''
+  approvingId.value = row.enrollmentId
+
+  try {
+    const res = await enrollmentApi.approve(row.enrollmentId)
+    console.log('[MyPage] approve response:', res.data)
+
+    // 결제는 응답 시점에 완료가 보장되므로 대기 목록에서는 바로 제거한다.
+    // ACTIVE 전환은 Kafka 이벤트로 비동기 처리되므로, 잠시 뒤 조용히 재조회해
+    // (스켈레톤 없이) 최종 상태로 동기화한다.
+    pendingRows.value = pendingRows.value.filter(r => r.enrollmentId !== row.enrollmentId)
+    activeRows.value = [{ ...row, status: 'ACTIVE' }, ...activeRows.value]
+
+    setTimeout(() => loadApprovalLists({ silent: true }), 1200)
+  } catch (error) {
+    console.error('[MyPage] approve failed:', error)
+    const status = error.response?.status
+    const message = error.response?.data?.message
+
+    if (status === 409) {
+      approvalActionError.value = message || '이미 처리된 수강 신청입니다.'
+      await loadApprovalLists()
+    } else if (status === 404) {
+      approvalActionError.value = message || '수강 신청을 찾을 수 없습니다.'
+      await loadApprovalLists()
+    } else if (status === 403) {
+      approvalActionError.value = 'HR 담당자만 접근할 수 있습니다.'
+    } else if (status === 502 || status === 503) {
+      approvalActionError.value = message || '일시적인 오류입니다. 잠시 후 다시 시도해 주세요.'
+    } else {
+      approvalActionError.value = message || '승인 처리 중 오류가 발생했습니다.'
+    }
+  } finally {
+    approvingId.value = null
+  }
+}
 
 function handleLogout() {
   auth.logout()
   router.push('/')
-}
-
-function formatPrice(price) {
-  const value = Number(price ?? 0)
-  if (Number.isNaN(value)) return '-'
-  return `${value.toLocaleString()}원`
-}
-
-/**
- * course 객체에서 강사 식별자 추출
- */
-function getCourseInstructorId(course) {
-  return (
-    course.instructorId ??
-    course.instructor_id ??
-    course.instructor ??
-    course.teacherId ??
-    course.teacher_id ??
-    null
-  )
 }
 
 async function loadStudentRecommendations() {
@@ -297,103 +322,11 @@ async function loadStudentRecommendations() {
   }
 }
 
-async function loadInstructorCourses() {
-  try {
-    if (!auth.user) {
-      console.warn('[MyPage] instructor auth.user is missing')
-      instructorError.value = '강좌 정보를 불러오지 못했습니다.'
-      return
-    }
-
-    if (!auth.user.id) {
-      console.warn('[MyPage] instructor auth.user.id is missing:', auth.user)
-      instructorError.value = '강좌 정보를 불러오지 못했습니다.'
-      return
-    }
-
-    const res = await courseApi.getCourses()
-    console.log('[MyPage] course list response:', res.data)
-
-    let courses = []
-
-    if (Array.isArray(res.data?.data)) {
-      courses = res.data.data
-    } else if (Array.isArray(res.data)) {
-      courses = res.data
-    } else {
-      console.warn('[MyPage] unexpected course response shape:', res.data)
-    }
-
-    console.log('[MyPage] auth.user =', auth.user)
-    console.log('[MyPage] courses =', courses)
-    console.log('[MyPage] first course =', courses[0])
-
-    courses.forEach(course => {
-      console.log('[MyPage] instructor fields check:', {
-        courseId: course.id,
-        instructorId: course.instructorId,
-        instructor_id: course.instructor_id,
-        instructor: course.instructor,
-        teacherId: course.teacherId,
-        teacher_id: course.teacher_id,
-        rawCourse: course
-      })
-    })
-
-    const instructorId = Number(auth.user.id)
-
-    myCourses.value = courses.filter(course => {
-      const courseInstructorId = Number(getCourseInstructorId(course))
-      return !Number.isNaN(courseInstructorId) && courseInstructorId === instructorId
-    })
-
-    console.log('[MyPage] filtered myCourses =', myCourses.value)
-  } catch (error) {
-    console.error('[MyPage] failed to load instructor courses:', error)
-    instructorError.value = '현재 강좌 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
-  } finally {
-    instructorLoading.value = false
-  }
-}
-
-async function loadPendingEnrollments() {
-  approvalLoading.value = true
-  approvalError.value = ''
-  try {
-    const res = await enrollmentApi.getAdminEnrollments('PENDING')
-    pendingEnrollments.value = Array.isArray(res.data?.data) ? res.data.data : []
-  } catch (error) {
-    console.error('[MyPage] failed to load pending enrollments:', error)
-    approvalError.value = error.response?.data?.message || '승인 대기 목록을 불러오지 못했습니다.'
-  } finally {
-    approvalLoading.value = false
-  }
-}
-
-async function approveEnrollment(enrollmentId) {
-  approvingId.value = enrollmentId
-  approvalError.value = ''
-  try {
-    await enrollmentApi.approve(enrollmentId)
-    pendingEnrollments.value = pendingEnrollments.value.filter(
-      item => Number(item.enrollmentId) !== Number(enrollmentId)
-    )
-    window.alert('수강 신청을 승인했습니다.')
-    window.setTimeout(loadPendingEnrollments, 1000)
-  } catch (error) {
-    console.error('[MyPage] failed to approve enrollment:', error)
-    approvalError.value = error.response?.data?.message || '승인 처리에 실패했습니다.'
-  } finally {
-    approvingId.value = null
-  }
-}
-
 onMounted(async () => {
   if (isInstructor.value) {
     recommendLoading.value = false
-    await Promise.all([loadPendingEnrollments(), loadInstructorCourses()])
+    await loadApprovalLists()
   } else {
-    instructorLoading.value = false
     await loadStudentRecommendations()
   }
 })
@@ -402,97 +335,110 @@ onMounted(async () => {
 <style scoped>
 .page-wrapper {
   min-height: 100vh;
-  background: var(--color-bg-secondary);
+  background:
+    radial-gradient(circle at 80% -10%, rgba(126, 108, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 0% 80%, rgba(84, 215, 180, 0.05), transparent 28%),
+    var(--sf-canvas);
 }
 
-.page-layout {
-  max-width: 1200px;
+.page {
+  padding: 48px 0 72px;
+}
+
+.shell {
+  max-width: var(--sf-shell);
   margin: 0 auto;
-  padding: 32px 24px;
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 28px;
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 8px;
-}
-
-.sidebar-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
-  padding: 8px 12px 4px;
-}
-
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  transition: var(--transition);
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  text-decoration: none;
-}
-
-.sidebar-item:hover {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-}
-
-.sidebar-item.active {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-weight: 500;
-}
-
-.si-icon {
-  font-size: 15px;
-}
-
-.main-content {
-  min-width: 0;
+  padding-left: 24px;
+  padding-right: 24px;
   display: flex;
   flex-direction: column;
   gap: 32px;
 }
 
+/* 공통 타이틀 영역 (HR) */
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--sf-indigo);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 38px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--sf-ink);
+}
+
+.page-desc {
+  margin: 12px 0 0;
+  color: var(--sf-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.btn {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-secondary {
+  color: var(--sf-indigo-dark);
+  border-color: rgba(91, 80, 230, 0.22);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.action-error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 11px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 12px;
+}
+
+/* 직원 프로필 카드 */
 .profile-card {
   display: flex;
   align-items: center;
   gap: 20px;
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
   padding: 28px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--sf-shadow-sm);
 }
 
 .profile-avatar {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+  background: var(--sf-indigo-soft);
+  color: var(--sf-indigo-dark);
   font-size: 24px;
   font-weight: 700;
   display: flex;
@@ -510,60 +456,63 @@ onMounted(async () => {
 .profile-name {
   font-size: 20px;
   font-weight: 700;
+  color: var(--sf-ink);
 }
 
 .profile-email {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--sf-muted);
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  padding: 6px 12px;
+  min-height: 25px;
+  padding: 0 10px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 750;
 }
 
-.badge-blue {
-  background: #e8f1ff;
-  color: #2563eb;
+.badge-indigo {
+  color: var(--sf-indigo-dark);
+  background: var(--sf-indigo-soft);
+}
+
+.badge-mint {
+  color: #087858;
+  background: var(--sf-success-bg);
 }
 
 .badge-amber {
-  background: #f7edd8;
-  color: #9a6700;
-}
-
-.section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  color: #ad5e00;
+  background: var(--sf-pending-bg);
 }
 
 .section-title {
+  margin: 0;
   font-size: 18px;
   font-weight: 700;
+  color: var(--sf-ink);
 }
 
-.section-subtitle {
+.section-desc {
+  margin: 5px 0 0;
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--sf-muted);
 }
 
 .recommend-message {
   margin-bottom: 14px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--sf-muted);
 }
 
 .recommend-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 18px;
 }
 
 .loading-row {
@@ -572,61 +521,16 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.instructor-loading {
-  margin-bottom: 20px;
-}
-
-.approval-panel {
-  margin-bottom: 32px;
-  padding: 22px;
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-.approval-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.approval-item {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr auto;
-  align-items: center;
-  gap: 18px;
-  padding: 14px;
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
-}
-
-.approval-item > div,
-.approval-course {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.approval-item span {
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-.approval-item button:disabled {
-  opacity: 0.55;
-  cursor: wait;
-}
-
 .skeleton-card {
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 20px;
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--sf-border);
 }
 
 .skeleton-thumb {
-  height: 110px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  height: 132px;
+  background: linear-gradient(90deg, #eef0f6 25%, #e2e5ee 50%, #eef0f6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -641,7 +545,7 @@ onMounted(async () => {
 .skeleton-line {
   height: 12px;
   border-radius: 6px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, #eef0f6 25%, #e2e5ee 50%, #eef0f6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -650,141 +554,188 @@ onMounted(async () => {
   width: 40%;
 }
 
-.summary-cards {
+.empty-text {
+  color: var(--sf-muted);
+  font-size: 14px;
+}
+
+/* HR 요약 카드 */
+.metric-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(160px, 220px));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  margin-bottom: 20px;
 }
 
-.summary-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
-  box-shadow: var(--shadow-sm);
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  box-shadow: var(--sf-shadow-sm);
 }
 
-.summary-label {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
+.metric {
+  padding: 19px 21px;
+  position: relative;
+  overflow: hidden;
 }
 
-.summary-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
+.metric::after {
+  content: '';
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  right: -35px;
+  top: -35px;
+  border-radius: 50%;
+  background: var(--sf-indigo-soft);
 }
 
-.instructor-course-list {
-  display: grid;
-  gap: 18px;
-}
-
-.instructor-course-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 22px;
-  box-shadow: var(--shadow-sm);
-}
-
-.course-card-top {
+.metric-label {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 6px;
+  color: var(--sf-muted);
+  font-size: 12px;
+}
+
+.metric-value {
+  position: relative;
+  z-index: 1;
+  margin-top: 9px;
+  font-size: 26px;
+  font-weight: 850;
+  letter-spacing: -0.045em;
+  color: var(--sf-ink);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-amber {
+  background: var(--sf-pending);
+}
+
+.dot-mint {
+  background: var(--sf-success);
+}
+
+/* 승인 테이블 툴바 */
+.admin-toolbar {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
 }
 
-.course-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.course-desc {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-  white-space: pre-line;
-}
-
-.status-badge {
+.segmented {
   display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  border-radius: 999px;
-  padding: 6px 10px;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--sf-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.segment {
+  height: 33px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sf-muted);
   font-size: 12px;
-  font-weight: 600;
-}
-
-.status-active {
-  background: #eaf8ef;
-  color: #0f8a3b;
-}
-
-.status-inactive {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.course-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.meta-box {
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
-  padding: 14px;
-}
-
-.meta-label {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-bottom: 6px;
-}
-
-.meta-value {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.course-card-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
+  font-weight: 750;
   transition: var(--transition);
 }
 
-.action-primary {
-  background: var(--color-primary);
+.segment.active {
+  color: var(--sf-indigo-dark);
+  background: white;
+  box-shadow: 0 2px 8px rgba(16, 19, 35, 0.07);
+}
+
+/* 승인 테이블 */
+.data-table {
+  overflow: hidden;
+}
+
+.table-head,
+.table-row {
+  display: grid;
+  align-items: center;
+  padding: 0 22px;
+}
+
+.table-head {
+  height: 45px;
+  color: var(--sf-subtle);
+  background: #f8f9fc;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.table-row {
+  min-height: 78px;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 13px;
+  color: var(--sf-ink);
+}
+
+.table-row:last-child {
+  border-bottom: 0;
+}
+
+.approval-cols {
+  grid-template-columns: 1fr 2fr 0.65fr 0.7fr 0.75fr 0.78fr;
+}
+
+.cell-title {
+  font-weight: 750;
+  font-size: 13px;
+}
+
+.cell-sub {
+  margin-top: 4px;
+  color: var(--sf-muted);
+  font-size: 11px;
+}
+
+.recommend-score {
+  color: var(--sf-success);
+  font-weight: 850;
+  font-size: 13px;
+}
+
+.status-button {
+  height: 35px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 11px;
   color: white;
+  background: linear-gradient(135deg, var(--sf-indigo), #7254ef);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
 }
 
-.action-primary:hover {
-  opacity: 0.92;
+.empty-row {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--sf-muted);
+  font-size: 13px;
 }
 
-.empty-text {
-  color: var(--color-text-muted);
-  font-size: 14px;
+.helper-note {
+  margin: -12px 0 0;
+  color: var(--sf-muted);
+  font-size: 12px;
 }
 
 @keyframes shimmer {
@@ -794,22 +745,25 @@ onMounted(async () => {
 }
 
 @media (max-width: 992px) {
-  .page-layout {
-    grid-template-columns: 1fr;
-  }
-
   .recommend-grid,
-  .loading-row,
-  .course-meta-grid {
+  .loading-row {
     grid-template-columns: 1fr;
   }
 
-  .summary-cards {
-    grid-template-columns: 1fr 1fr;
+  .metric-grid {
+    grid-template-columns: 1fr;
   }
 
-  .approval-item {
-    grid-template-columns: 1fr;
+  .title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 
@@ -817,14 +771,6 @@ onMounted(async () => {
   .profile-card {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .course-card-top {
-    flex-direction: column;
-  }
-
-  .summary-cards {
-    grid-template-columns: 1fr;
   }
 }
 </style>
