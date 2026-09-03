@@ -84,6 +84,7 @@ class RecommendService:
             overallLevel=profile["overallLevel"],
             careerGoal=profile["careerGoal"],
             competencyScores=profile["competencyScores"],
+            competencies=profile.get("competencies") or {},
             recommendedCourses=recommended,
             basedOnCategory=None,
             message=f"{profile['name']}님의 현재 역량과 희망 방향을 반영한 맞춤 강의입니다.",
