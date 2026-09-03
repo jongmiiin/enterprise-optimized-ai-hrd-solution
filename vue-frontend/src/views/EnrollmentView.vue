@@ -50,9 +50,7 @@
             class="table-row learning-cols"
           >
             <div class="course-cell">
-              <div class="mini-thumb" :class="getThumbBg(item)">
-                <img v-if="getThumbSrc(item)" :src="getThumbSrc(item)" :alt="item.course?.title" />
-              </div>
+              <div class="mini-thumb" :class="getThumbBg(item)"></div>
               <div>
                 <div class="cell-title">{{ item.course?.title || '삭제된 과정' }}</div>
                 <div class="cell-sub">{{ item.course?.description || 'AI 역량 향상 과정' }}</div>
@@ -142,11 +140,6 @@ function getThumbBg(item) {
     'AI': 'thumb-violet'
   }
   return map[category] || 'thumb-slate'
-}
-
-function getThumbSrc(item) {
-  const category = getCategoryLabel(item)
-  return courseStore.getThumbnail({ ...item.course, category })
 }
 
 function formatDate(value) {
@@ -355,13 +348,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.mini-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 6px;
 }
 
 .thumb-blue   { background: linear-gradient(135deg, #dfe8fa, #eaf0fa 55%, #b8ccf3); }

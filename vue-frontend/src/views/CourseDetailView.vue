@@ -32,9 +32,7 @@
 
         <!-- 우측: 신청/결제 카드 -->
         <aside class="panel checkout-card fade-in">
-          <div class="checkout-thumb" :class="thumbBg">
-            <img v-if="thumbSrc" :src="thumbSrc" :alt="course.title" />
-          </div>
+          <div class="checkout-thumb" :class="thumbBg"></div>
 
           <div class="checkout-price">₩{{ displayPrice }}</div>
 
@@ -118,11 +116,11 @@ const loading = computed(() => courseStore.loading)
 const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
 
 const categoryConfig = {
-  '백엔드': { bg: 'thumb-blue', thumb: 'spring_boot' },
-  '프론트엔드': { bg: 'thumb-lilac', thumb: 'vue_js' },
-  'DevOps': { bg: 'thumb-green', thumb: 'kubernetes' },
-  '데이터': { bg: 'thumb-slate', thumb: 'python' },
-  'AI': { bg: 'thumb-violet', thumb: 'generative_ai' },
+  '백엔드': { bg: 'thumb-blue' },
+  '프론트엔드': { bg: 'thumb-lilac' },
+  'DevOps': { bg: 'thumb-green' },
+  '데이터': { bg: 'thumb-slate' },
+  'AI': { bg: 'thumb-violet' },
 }
 
 const config = computed(() => categoryConfig[course.value?.category] || {})
@@ -153,17 +151,6 @@ const displayDifficulty = computed(() => {
 const displayPrice = computed(() => {
   const value = Number(course.value?.price ?? 0)
   return Number.isNaN(value) ? '0' : value.toLocaleString()
-})
-
-const thumbSrc = computed(() => {
-  const key = course.value?.thumbnail || config.value.thumb
-  if (!key) return null
-
-  try {
-    return new URL(`../assets/images/courses/${key}.png`, import.meta.url).href
-  } catch {
-    return null
-  }
 })
 
 const buttonLabel = computed(() => {
@@ -424,13 +411,6 @@ watch(
   align-items: center;
   justify-content: center;
   overflow: hidden;
-}
-
-.checkout-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 20px;
 }
 
 .thumb-blue   { background: linear-gradient(135deg, #dfe8fa, #eaf0fa 55%, #b8ccf3); }

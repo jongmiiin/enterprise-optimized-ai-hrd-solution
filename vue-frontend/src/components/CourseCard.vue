@@ -2,7 +2,6 @@
   <router-link :to="`/courses/${course.id}`" class="course-card">
     <!-- 썸네일 -->
     <div class="card-thumb" :class="thumbBg">
-      <img v-if="thumbSrc" :src="thumbSrc" :alt="course.title" class="thumb-img" />
       <span class="thumb-shape"></span>
     </div>
 
@@ -37,26 +36,15 @@ const props = defineProps({
 })
 
 const categoryConfig = {
-  '백엔드':     { bg: 'thumb-blue',  thumb: 'spring_boot' },
-  '프론트엔드': { bg: 'thumb-lilac', thumb: 'vue_js' },
-  'DevOps':    { bg: 'thumb-green', thumb: 'docker' },
-  '데이터':     { bg: 'thumb-slate', thumb: 'python' },
-  'AI':        { bg: 'thumb-violet', thumb: 'generative_ai' },
+  '백엔드':     { bg: 'thumb-blue' },
+  '프론트엔드': { bg: 'thumb-lilac' },
+  'DevOps':    { bg: 'thumb-green' },
+  '데이터':     { bg: 'thumb-slate' },
+  'AI':        { bg: 'thumb-violet' },
 }
 
 const config = computed(() => categoryConfig[props.course.category] || { bg: 'thumb-slate' })
 const thumbBg = computed(() => config.value.bg)
-
-// 썸네일 이미지 동적 import
-const thumbSrc = computed(() => {
-  const key = props.course.thumbnail || config.value.thumb
-  if (!key) return null
-  try {
-    return new URL(`../assets/images/courses/${key}.png`, import.meta.url).href
-  } catch {
-    return null
-  }
-})
 </script>
 
 <style scoped>
@@ -111,14 +99,6 @@ const thumbSrc = computed(() => {
 .thumb-amber  { background: linear-gradient(135deg, #fff1d8, #f7ddb0 55%, #e3b45e); }
 .thumb-slate  { background: linear-gradient(135deg, #e6e9ef, #c9d0dc 55%, #9ca9bc); }
 .thumb-lilac  { background: linear-gradient(135deg, #f0edff, #ded8ff 55%, #b9adf5); }
-.thumb-img {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 20px;
-}
 .card-body {
   padding: 17px 18px 18px;
   display: flex;
