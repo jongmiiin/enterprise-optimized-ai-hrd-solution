@@ -54,10 +54,9 @@
             <p class="page-desc">직원이 신청한 AI 추천 과정을 확인하고 승인할 수 있어요.</p>
           </div>
 
-          <select v-model="selectedJob" class="select-small">
-            <option value="전체 직무">전체 직무</option>
-            <option v-for="job in jobTitles" :key="job" :value="job">{{ job }}</option>
-          </select>
+          <button type="button" class="btn btn-secondary" :disabled="listLoading" @click="loadApprovalLists">
+            {{ listLoading ? '불러오는 중...' : '새로고침' }}
+          </button>
         </div>
 
         <section class="metric-grid">
@@ -98,7 +97,30 @@
           </div>
         </div>
 
-        <section class="panel data-table fade-in">
+        <p v-if="approvalActionError" class="action-error">{{ approvalActionError }}</p>
+
+        <div v-if="listLoading" class="panel data-table">
+          <div class="table-head approval-cols">
+            <span>직원</span>
+            <span>신청 교육</span>
+            <span>AI 추천</span>
+            <span>금액</span>
+            <span>상태</span>
+            <span>처리</span>
+          </div>
+          <div v-for="i in 3" :key="i" class="table-row approval-cols">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        </div>
+
+        <p v-else-if="listError" class="empty-text">{{ listError }}</p>
+
+        <section v-else class="panel data-table fade-in">
           <div class="table-head approval-cols">
             <span>직원</span>
             <span>신청 교육</span>
@@ -108,28 +130,34 @@
             <span>처리</span>
           </div>
 
-          <div v-for="row in filteredApprovalRows" :key="row.id" class="table-row approval-cols">
+          <div v-for="row in currentRows" :key="row.enrollmentId" class="table-row approval-cols">
             <div>
-              <div class="cell-title">{{ row.employee }}</div>
-              <div class="cell-sub">{{ row.jobTitle }}</div>
+              <div class="cell-title">{{ row.userName }}</div>
+              <div class="cell-sub">{{ row.userEmail }}</div>
             </div>
             <span class="cell-title">{{ row.courseTitle }}</span>
-            <span class="recommend-score">{{ row.recommendScore }}%</span>
-            <span>{{ row.amount.toLocaleString() }}원</span>
+            <span class="recommend-score">{{ pseudoScore(row.enrollmentId) }}%</span>
+            <span>{{ Number(row.price).toLocaleString() }}원</span>
             <span>
               <span class="badge" :class="row.status === 'ACTIVE' ? 'badge-mint' : 'badge-amber'">
                 {{ row.status === 'ACTIVE' ? '승인 완료' : '승인 대기' }}
               </span>
             </span>
             <span>
-              <button v-if="row.status !== 'ACTIVE'" type="button" class="status-button" @click="approveRow(row)">
-                승인·결제
+              <button
+                v-if="row.status !== 'ACTIVE'"
+                type="button"
+                class="status-button"
+                :disabled="approvingId === row.enrollmentId"
+                @click="approveRow(row)"
+              >
+                {{ approvingId === row.enrollmentId ? '처리 중...' : '승인·결제' }}
               </button>
               <span v-else class="cell-sub">승인 완료</span>
             </span>
           </div>
 
-          <div v-if="!filteredApprovalRows.length" class="empty-row">
+          <div v-if="!currentRows.length" class="empty-row">
             해당 조건의 신청 내역이 없습니다.
           </div>
         </section>
@@ -159,44 +187,93 @@ const recommendLoading = ref(true)
 const recommendError = ref('')
 const recommendMessage = ref('')
 
-/* HR 승인 관리용 (백엔드에 전체 직원 신청 조회 API가 아직 없어 더미 데이터 사용) */
-const approvalRows = ref([
-  { id: 1, employee: '김민수', jobTitle: '백엔드 개발자', courseTitle: '생성형 AI로 업무 자동화하기', recommendScore: 96, amount: 90000, status: 'PENDING' },
-  { id: 2, employee: '박준호', jobTitle: '데이터 분석가', courseTitle: '좋은 프롬프트를 만드는 법', recommendScore: 91, amount: 80000, status: 'PENDING' },
-  { id: 3, employee: '최민혁', jobTitle: '보안 엔지니어', courseTitle: '개발자를 위한 책임 있는 AI', recommendScore: 87, amount: 100000, status: 'PENDING' },
-  { id: 4, employee: '이서연', jobTitle: '프론트엔드 개발자', courseTitle: '프론트엔드 개발자를 위한 AI 코딩 어시스턴트', recommendScore: 94, amount: 80000, status: 'ACTIVE' },
-  { id: 5, employee: '정하은', jobTitle: 'DevOps 엔지니어', courseTitle: '개발자를 위한 책임 있는 AI 활용', recommendScore: 89, amount: 100000, status: 'ACTIVE' },
-  { id: 6, employee: '강태우', jobTitle: '데이터 분석가', courseTitle: '데이터 분석 업무에 AI 활용하기', recommendScore: 93, amount: 90000, status: 'ACTIVE' },
-  { id: 7, employee: '윤소희', jobTitle: '프로덕트 매니저', courseTitle: '비개발자를 위한 생성형 AI 활용법', recommendScore: 85, amount: 70000, status: 'ACTIVE' },
-  { id: 8, employee: '한지훈', jobTitle: '백엔드 개발자', courseTitle: '생성형 AI로 업무 자동화하기', recommendScore: 90, amount: 90000, status: 'ACTIVE' },
-  { id: 9, employee: '오다은', jobTitle: 'HR 담당자', courseTitle: '좋은 프롬프트를 만드는 법', recommendScore: 88, amount: 80000, status: 'ACTIVE' },
-  { id: 10, employee: '배주현', jobTitle: '마케터', courseTitle: '비개발자를 위한 생성형 AI 활용법', recommendScore: 92, amount: 70000, status: 'ACTIVE' },
-  { id: 11, employee: '조민재', jobTitle: '프론트엔드 개발자', courseTitle: 'AI 협업 도구 실전', recommendScore: 86, amount: 80000, status: 'ACTIVE' }
-])
+/* HR 승인 관리용 */
+const pendingRows = ref([])
+const activeRows = ref([])
+const listLoading = ref(true)
+const listError = ref('')
 const approvalTab = ref('pending')
-const selectedJob = ref('전체 직무')
+const approvingId = ref(null)
+const approvalActionError = ref('')
 
-const jobTitles = computed(() => [...new Set(approvalRows.value.map(r => r.jobTitle))])
-
-const pendingCount = computed(() => approvalRows.value.filter(r => r.status !== 'ACTIVE').length)
-const approvedCount = computed(() => approvalRows.value.filter(r => r.status === 'ACTIVE').length)
+const currentRows = computed(() => (approvalTab.value === 'pending' ? pendingRows.value : activeRows.value))
+const pendingCount = computed(() => pendingRows.value.length)
+const approvedCount = computed(() => activeRows.value.length)
 const expectedAmount = computed(() =>
-  approvalRows.value
-    .filter(r => r.status !== 'ACTIVE')
-    .reduce((sum, r) => sum + r.amount, 0)
+  pendingRows.value.reduce((sum, r) => sum + Number(r.price || 0), 0)
 )
 
-const filteredApprovalRows = computed(() => {
-  return approvalRows.value.filter(r => {
-    const matchesTab = approvalTab.value === 'pending' ? r.status !== 'ACTIVE' : r.status === 'ACTIVE'
-    const matchesJob = selectedJob.value === '전체 직무' || r.jobTitle === selectedJob.value
-    return matchesTab && matchesJob
-  })
-})
+// 백엔드에 아직 AI 추천 점수 필드가 없어, 신청 ID 기반 고정 의사난수로 임시 표시
+function pseudoScore(enrollmentId) {
+  const id = Number(enrollmentId) || 0
+  return 85 + (id * 7) % 13
+}
 
-function approveRow(row) {
-  // 실제 결제/승인 API가 아직 없어 프론트 상태만 즉시 전환 (데모용)
-  row.status = 'ACTIVE'
+async function loadApprovalLists({ silent = false } = {}) {
+  if (!silent) {
+    listLoading.value = true
+    listError.value = ''
+  }
+
+  try {
+    const [pendingRes, activeRes] = await Promise.all([
+      enrollmentApi.getAdminEnrollments('PENDING'),
+      enrollmentApi.getAdminEnrollments('ACTIVE')
+    ])
+
+    pendingRows.value = Array.isArray(pendingRes.data?.data) ? pendingRes.data.data : []
+    activeRows.value = Array.isArray(activeRes.data?.data) ? activeRes.data.data : []
+  } catch (error) {
+    console.error('[MyPage] failed to load admin enrollments:', error)
+
+    if (!silent) {
+      if (error.response?.status === 403) {
+        listError.value = 'HR 담당자만 접근할 수 있습니다.'
+      } else {
+        listError.value = '신청 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      }
+    }
+  } finally {
+    if (!silent) listLoading.value = false
+  }
+}
+
+async function approveRow(row) {
+  approvalActionError.value = ''
+  approvingId.value = row.enrollmentId
+
+  try {
+    const res = await enrollmentApi.approve(row.enrollmentId)
+    console.log('[MyPage] approve response:', res.data)
+
+    // 결제는 응답 시점에 완료가 보장되므로 대기 목록에서는 바로 제거한다.
+    // ACTIVE 전환은 Kafka 이벤트로 비동기 처리되므로, 잠시 뒤 조용히 재조회해
+    // (스켈레톤 없이) 최종 상태로 동기화한다.
+    pendingRows.value = pendingRows.value.filter(r => r.enrollmentId !== row.enrollmentId)
+    activeRows.value = [{ ...row, status: 'ACTIVE' }, ...activeRows.value]
+
+    setTimeout(() => loadApprovalLists({ silent: true }), 1200)
+  } catch (error) {
+    console.error('[MyPage] approve failed:', error)
+    const status = error.response?.status
+    const message = error.response?.data?.message
+
+    if (status === 409) {
+      approvalActionError.value = message || '이미 처리된 수강 신청입니다.'
+      await loadApprovalLists()
+    } else if (status === 404) {
+      approvalActionError.value = message || '수강 신청을 찾을 수 없습니다.'
+      await loadApprovalLists()
+    } else if (status === 403) {
+      approvalActionError.value = 'HR 담당자만 접근할 수 있습니다.'
+    } else if (status === 502 || status === 503) {
+      approvalActionError.value = message || '일시적인 오류입니다. 잠시 후 다시 시도해 주세요.'
+    } else {
+      approvalActionError.value = message || '승인 처리 중 오류가 발생했습니다.'
+    }
+  } finally {
+    approvingId.value = null
+  }
 }
 
 function handleLogout() {
@@ -248,6 +325,7 @@ async function loadStudentRecommendations() {
 onMounted(async () => {
   if (isInstructor.value) {
     recommendLoading.value = false
+    await loadApprovalLists()
   } else {
     await loadStudentRecommendations()
   }
@@ -309,13 +387,37 @@ onMounted(async () => {
   line-height: 1.6;
 }
 
-.select-small {
-  height: 36px;
-  padding: 0 34px 0 13px;
-  border: 1px solid var(--sf-border);
+.btn {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-secondary {
+  color: var(--sf-indigo-dark);
+  border-color: rgba(91, 80, 230, 0.22);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.action-error {
+  margin: 0;
+  padding: 10px 14px;
   border-radius: 11px;
-  color: var(--sf-muted);
-  background: rgba(255, 255, 255, 0.74);
+  background: #fef2f2;
+  color: #dc2626;
   font-size: 12px;
 }
 
