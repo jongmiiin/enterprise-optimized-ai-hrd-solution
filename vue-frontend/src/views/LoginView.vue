@@ -30,7 +30,7 @@
               <h1 class="section-title">다시 오신 것을 환영해요</h1>
             </div>
             <p class="section-desc">회사에서 제공한 계정으로 로그인해 주세요.</p>
-            <button class="oauth-button" @click="handleOAuth">계정으로 로그인 <span aria-hidden="true">→</span></button>
+            <button type="button" class="oauth-button" @click="handleOAuth">계정으로 로그인 <span aria-hidden="true">→</span></button>
             <div class="switch-link">
               계정이 없으신가요?
               <button class="text-btn" @click="showRegister = true">회원가입</button>
