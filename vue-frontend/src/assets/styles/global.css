@@ -25,6 +25,30 @@
   --shadow-lg: 0 10px 32px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06);
   --font-sans: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif;
   --transition: all 0.2s ease;
+
+  /* SkillFit AI 디자인 토큰 (design.md 참고) */
+  --sf-canvas: #f4f6fb;
+  --sf-surface: rgba(255, 255, 255, 0.88);
+  --sf-ink: #101323;
+  --sf-muted: #697086;
+  --sf-subtle: #9198aa;
+  --sf-indigo: #5b50e6;
+  --sf-indigo-dark: #4438ca;
+  --sf-indigo-soft: #eeedff;
+  --sf-violet: #8b5cf6;
+  --sf-ai-bg: #1b1834;
+  --sf-ai-bg-mid: #292255;
+  --sf-ai-bg-end: #3c2d7f;
+  --sf-success: #10a978;
+  --sf-success-bg: #e8f8f2;
+  --sf-pending: #d97706;
+  --sf-pending-bg: #fff5e6;
+  --sf-border: rgba(25, 31, 52, 0.1);
+  --sf-shadow-sm: 0 1px 2px rgba(16, 19, 35, 0.04), 0 8px 24px rgba(16, 19, 35, 0.04);
+  --sf-shadow-md: 0 20px 60px rgba(69, 60, 178, 0.12);
+  --sf-radius-md: 18px;
+  --sf-radius-lg: 26px;
+  --sf-shell: 1280px;
 }
 
 *, *::before, *::after {

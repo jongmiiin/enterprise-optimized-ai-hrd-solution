@@ -2,58 +2,73 @@
   <div class="page-wrapper">
     <AppHeader />
 
-    <div class="detail-layout" v-if="course">
-      <div class="detail-hero">
-        <div class="detail-hero-inner">
-          <!-- 좌측 상세 정보 -->
-          <div class="detail-info fade-in-up">
-            <span class="badge" :class="badgeClass">{{ displayCategory }}</span>
-            <h1 class="detail-title">{{ course.title }}</h1>
-            <p class="detail-desc">
-              {{ course.description || '실무 전문가가 직접 설계한 커리큘럼으로 체계적으로 학습하세요.' }}
-            </p>
+    <main v-if="course" class="page shell">
+      <div class="detail-main">
+        <!-- 좌측: 과정 소개 히어로 -->
+        <section class="detail-hero fade-in-up">
+          <span class="badge badge-indigo">{{ displayCategory }}</span>
+          <h1 class="detail-title">{{ course.title }}</h1>
+          <p class="detail-desc">
+            {{ course.description || '실무 전문가가 직접 설계한 커리큘럼으로 체계적으로 학습하세요.' }}
+          </p>
 
-            <div class="detail-meta">
-              <span>강사: {{ displayInstructorName }}</span>
-              <span>수강생: {{ displayEnrollmentCount }}명</span>
-            </div>
+          <div class="detail-meta">
+            <span>교육 담당&nbsp; {{ displayInstructorName }}</span>
+            <span>수강생&nbsp; {{ displayEnrollmentCount }}명</span>
           </div>
 
-          <!-- 우측 결제/수강 카드 -->
-          <div class="enroll-card fade-in">
-            <div class="enroll-thumb" :class="thumbBg">
-              <img v-if="thumbSrc" :src="thumbSrc" :alt="course.title" />
-            </div>
-
-            <div class="enroll-body">
-              <div class="enroll-price">₩{{ displayPrice }}</div>
-
-              <button
-                class="btn btn-primary btn-full"
-                @click="handlePrimaryAction"
-                :disabled="buttonDisabled"
-                :class="{ 'btn-disabled': buttonDisabled }"
-              >
-                <span v-if="enrolling">처리 중...</span>
-                <span v-else>{{ buttonLabel }}</span>
-              </button>
-
-              <div v-if="enrollError" class="error-msg">{{ enrollError }}</div>
-
-              <p class="helper-text" v-if="helperText">
-                {{ helperText }}
-              </p>
-
-              <ul class="enroll-info-list">
-                <li>✅ 즉시 수강 가능</li>
-                <li>✅ 평생 소장</li>
-                <li>✅ 수료증 발급</li>
-              </ul>
-            </div>
+          <div class="benefit-row">
+            <span class="benefit">✓ 직무·역량 기반 추천 과정</span>
+            <span class="benefit">✓ HR 승인 후 수강 가능</span>
+            <span class="benefit">✓ 기업 교육비 지원</span>
           </div>
-        </div>
+        </section>
+
+        <!-- 우측: 신청/결제 카드 -->
+        <aside class="panel checkout-card fade-in">
+          <div class="checkout-thumb" :class="thumbBg">
+            <img v-if="thumbSrc" :src="thumbSrc" :alt="course.title" />
+          </div>
+
+          <div class="checkout-price">₩{{ displayPrice }}</div>
+
+          <button
+            class="btn btn-primary btn-block"
+            @click="handlePrimaryAction"
+            :disabled="buttonDisabled"
+            :class="{ 'btn-disabled': buttonDisabled }"
+          >
+            <span v-if="enrolling">처리 중...</span>
+            <span v-else>{{ buttonLabel }}</span>
+          </button>
+
+          <div v-if="enrollError" class="error-msg">{{ enrollError }}</div>
+
+          <p class="helper">{{ helperText }}</p>
+
+          <div class="certificate">
+            <button class="btn btn-disabled btn-block" disabled>수료증 발급</button>
+            <small>수강 완료 후 이용 가능</small>
+          </div>
+        </aside>
       </div>
-    </div>
+
+      <section class="detail-info">
+        <article class="panel info-block">
+          <h3>과정 소개</h3>
+          <p>
+            {{ course.description || '실무 사례 중심으로 바로 적용할 수 있는 역량을 키우는 과정입니다.' }}
+          </p>
+        </article>
+        <article class="panel info-block">
+          <h3>이런 분께 추천해요</h3>
+          <ul>
+            <li>{{ displayCategory }} 관련 업무를 효율적으로 처리하고 싶은 직장인</li>
+            <li>AI를 업무에 어떻게 활용할지 고민 중인 분</li>
+          </ul>
+        </article>
+      </section>
+    </main>
 
     <div v-else-if="loading" class="loading-center">
       <div class="spinner"></div>
@@ -87,16 +102,15 @@ const loading = computed(() => courseStore.loading)
 const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
 
 const categoryConfig = {
-  '백엔드': { badge: 'badge-teal', bg: 'thumb-teal', thumb: 'spring_boot' },
-  '프론트엔드': { badge: 'badge-teal', bg: 'thumb-teal', thumb: 'vue_js' },
-  'DevOps': { badge: 'badge-blue', bg: 'thumb-blue', thumb: 'kubernetes' },
-  '데이터': { badge: 'badge-purple', bg: 'thumb-purple', thumb: 'python' },
-  'AI': { badge: 'badge-pink', bg: 'thumb-pink', thumb: 'generative_ai' },
+  '백엔드': { bg: 'thumb-blue', thumb: 'spring_boot' },
+  '프론트엔드': { bg: 'thumb-lilac', thumb: 'vue_js' },
+  'DevOps': { bg: 'thumb-green', thumb: 'kubernetes' },
+  '데이터': { bg: 'thumb-slate', thumb: 'python' },
+  'AI': { bg: 'thumb-violet', thumb: 'generative_ai' },
 }
 
 const config = computed(() => categoryConfig[course.value?.category] || {})
-const badgeClass = computed(() => config.value.badge || 'badge-gray')
-const thumbBg = computed(() => config.value.bg || 'thumb-gray')
+const thumbBg = computed(() => config.value.bg || 'thumb-slate')
 
 const displayCategory = computed(() => course.value?.category || '-')
 
@@ -137,10 +151,10 @@ const thumbSrc = computed(() => {
 })
 
 const buttonLabel = computed(() => {
-  if (isInstructor.value) return '강사 계정은 신청 불가'
-  if (enrollmentStatus.value === 'ACTIVE') return '내 수강 목록으로 이동'
-  if (enrollmentStatus.value === 'PENDING') return '신청 완료 · 결제 처리 중'
-  return '결제하고 수강하기'
+  if (isInstructor.value) return 'HR 담당자 계정은 신청 불가'
+  if (enrollmentStatus.value === 'ACTIVE') return '내 강의 목록으로 이동'
+  if (enrollmentStatus.value === 'PENDING') return '신청 완료 · HR 승인 대기'
+  return '수강 신청'
 })
 
 const buttonDisabled = computed(() => {
@@ -152,18 +166,18 @@ const buttonDisabled = computed(() => {
 
 const helperText = computed(() => {
   if (isInstructor.value) {
-    return '강사 계정은 본인 강의를 수강 신청할 수 없습니다.'
+    return 'HR 담당자 계정은 본인 과정을 수강 신청할 수 없습니다.'
   }
 
   if (enrollmentStatus.value === 'ACTIVE') {
-    return '이미 수강 중인 강의입니다. 내 수강 목록에서 바로 이어서 학습할 수 있습니다.'
+    return '승인이 완료된 과정은 바로 수강할 수 있어요.'
   }
 
   if (enrollmentStatus.value === 'PENDING') {
-    return '수강 신청이 접수되었습니다. 결제/처리 상태가 반영되면 내 수강 목록에서 확인할 수 있습니다.'
+    return '수강 신청이 접수되었습니다. HR 승인이 완료되면 내 강의 목록에서 확인할 수 있어요.'
   }
 
-  return '결제를 진행하면 수강 신청이 함께 처리됩니다.'
+  return '신청 후 HR 승인이 완료되면 수강할 수 있어요.'
 })
 
 async function loadEnrollmentStatus() {
@@ -205,7 +219,7 @@ async function handlePrimaryAction() {
   }
 
   if (isInstructor.value) {
-    enrollError.value = '강사 계정은 본인 강의를 수강 신청할 수 없습니다.'
+    enrollError.value = 'HR 담당자 계정은 본인 과정을 수강 신청할 수 없습니다.'
     return
   }
 
@@ -225,7 +239,7 @@ async function handlePrimaryAction() {
     enrollmentStatus.value = 'PENDING'
   } catch (e) {
     console.error('[CourseDetail] enroll failed:', e)
-    enrollError.value = e.response?.data?.message || '결제/수강 신청에 실패했습니다.'
+    enrollError.value = e.response?.data?.message || '수강 신청에 실패했습니다.'
   } finally {
     enrolling.value = false
   }
@@ -252,153 +266,279 @@ watch(
 <style scoped>
 .page-wrapper {
   min-height: 100vh;
-  background: var(--color-bg-secondary);
+  background:
+    radial-gradient(circle at 80% -10%, rgba(126, 108, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 0% 80%, rgba(84, 215, 180, 0.05), transparent 28%),
+    var(--sf-canvas);
 }
 
-.detail-hero {
-  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
-  border-bottom: 1px solid var(--color-border);
-  padding: 48px 0;
+.page {
+  padding: 48px 0 72px;
 }
 
-.detail-hero-inner {
-  max-width: 1100px;
+.shell {
+  max-width: var(--sf-shell);
   margin: 0 auto;
-  padding: 0 24px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.detail-main {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 48px;
+  grid-template-columns: 7fr 4fr;
+  gap: 30px;
   align-items: start;
 }
 
-.detail-info {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* 좌측 히어로 */
+.detail-hero {
+  padding: 46px;
+  min-height: 450px;
+  border-radius: var(--sf-radius-lg);
+  color: white;
+  background: linear-gradient(145deg, var(--sf-ai-bg), var(--sf-ai-bg-mid) 60%, var(--sf-ai-bg-end));
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sf-shadow-md);
+}
+
+.detail-hero::after {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  right: -170px;
+  bottom: -220px;
+  border: 1px solid rgba(170, 153, 255, 0.22);
+  box-shadow: 0 0 0 80px rgba(140, 120, 255, 0.05);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+  position: relative;
+  z-index: 1;
+}
+
+.badge-indigo {
+  color: #cfc8ff;
+  background: rgba(141, 119, 255, 0.16);
 }
 
 .detail-title {
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1.3;
+  position: relative;
+  z-index: 1;
+  max-width: 650px;
+  margin: 20px 0 18px;
+  font-size: 42px;
+  line-height: 1.2;
+  letter-spacing: -0.045em;
 }
 
 .detail-desc {
-  font-size: 15px;
-  color: var(--color-text-secondary);
+  position: relative;
+  z-index: 1;
+  max-width: 610px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.66);
   line-height: 1.7;
+  font-size: 14px;
 }
 
 .detail-meta {
+  position: relative;
+  z-index: 1;
   display: flex;
-  gap: 20px;
-  font-size: 14px;
-  color: var(--color-text-secondary);
+  gap: 24px;
+  margin-top: 34px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+}
+
+.benefit-row {
+  position: absolute;
+  left: 46px;
+  right: 46px;
+  bottom: 40px;
+  display: flex;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.enroll-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
+.benefit {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.83);
+  font-size: 11px;
 }
 
-.enroll-thumb {
-  height: 160px;
+/* 우측 신청 카드 */
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  box-shadow: var(--sf-shadow-sm);
+}
+
+.checkout-card {
+  padding: 22px;
+}
+
+.checkout-thumb {
+  height: 170px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
-.enroll-thumb img {
+.checkout-thumb img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   padding: 20px;
 }
 
-.thumb-teal { background: #E1F5EE; }
-.thumb-blue { background: #E6F1FB; }
-.thumb-purple { background: #EEEDFE; }
-.thumb-pink { background: #FBEAF0; }
-.thumb-gray { background: #F1EFE8; }
+.thumb-blue   { background: linear-gradient(135deg, #dfe8fa, #eaf0fa 55%, #b8ccf3); }
+.thumb-violet { background: linear-gradient(135deg, #eee8ff, #d9cdfa 55%, #b9a5ee); }
+.thumb-green  { background: linear-gradient(135deg, #dfeee9, #c6dfd6 55%, #8ab9a8); }
+.thumb-slate  { background: linear-gradient(135deg, #e6e9ef, #c9d0dc 55%, #9ca9bc); }
+.thumb-lilac  { background: linear-gradient(135deg, #f0edff, #ded8ff 55%, #b9adf5); }
 
-.enroll-body {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.checkout-price {
+  margin: 22px 0 16px;
+  font-size: 28px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  color: var(--sf-ink);
 }
 
-.enroll-price {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.btn-full {
-  width: 100%;
-  padding: 13px;
-  font-size: 15px;
+.btn {
+  height: 44px;
+  padding: 0 19px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 750;
+  font-size: 13px;
+}
+
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--sf-indigo), #6d52ef);
+  box-shadow: 0 10px 24px rgba(91, 80, 230, 0.22);
+}
+
+.btn-block {
+  width: 100%;
 }
 
 .btn-disabled {
-  opacity: 0.7;
+  color: #a2a8b8;
+  border-color: var(--sf-border);
+  background: #f6f7fa;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
-.enroll-info-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.enroll-info-list li {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
 .error-msg {
-  font-size: 13px;
+  margin-top: 10px;
+  font-size: 12px;
   color: #dc2626;
   padding: 8px 12px;
   background: #fef2f2;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
 }
 
-.helper-text {
-  font-size: 12px;
-  color: var(--color-text-muted);
+.helper {
+  margin: 12px 0 16px;
+  color: var(--sf-muted);
+  text-align: center;
+  font-size: 11px;
   line-height: 1.5;
+}
+
+.certificate {
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px solid var(--sf-border);
+}
+
+.certificate small {
+  display: block;
+  margin-top: 7px;
+  text-align: center;
+  color: var(--sf-subtle);
+  font-size: 10px;
+}
+
+/* 하단 정보 패널 */
+.detail-info {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.info-block {
+  padding: 25px;
+}
+
+.info-block h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  color: var(--sf-ink);
+}
+
+.info-block p,
+.info-block li {
+  color: var(--sf-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.info-block ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-block li::before {
+  content: '· ';
 }
 
 .empty-text {
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: var(--sf-muted);
 }
 
 .loading-center {
   display: flex;
   justify-content: center;
-  padding: 100px 0;
+  padding: 120px 0;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  border: 3px solid var(--sf-border);
+  border-top-color: var(--sf-indigo);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-}
-
-.badge-gray {
-  background: #f3f4f6;
-  color: #6b7280;
 }
 
 @keyframes spin {
@@ -408,8 +548,21 @@ watch(
 }
 
 @media (max-width: 900px) {
-  .detail-hero-inner {
+  .detail-main {
     grid-template-columns: 1fr;
+  }
+
+  .detail-info {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-row {
+    position: static;
+    margin-top: 30px;
+  }
+
+  .detail-hero {
+    min-height: 0;
   }
 }
 </style>
