@@ -1,85 +1,91 @@
 <template>
   <div class="page-wrapper">
     <AppHeader />
-    <div class="page-layout">
-      <aside class="sidebar">
-        <div class="sidebar-section">
-          <div class="sidebar-label">메뉴</div>
 
-          <router-link to="/courses" class="sidebar-item">
-            <span class="si-icon">📚</span> 강의 목록
-          </router-link>
-
-          <router-link
-            v-if="!isInstructor"
-            to="/enrollments"
-            class="sidebar-item active"
-          >
-            <span class="si-icon">✅</span> 내 수강 목록
-          </router-link>
-
-          <router-link to="/mypage" class="sidebar-item">
-            <span class="si-icon">⭐</span> 마이페이지
-          </router-link>
+    <main class="page shell">
+      <div class="title-row">
+        <div>
+          <p class="eyebrow">MY COURSES</p>
+          <h1 class="page-title">내 강의 목록</h1>
+          <p class="page-desc">신청한 교육의 승인 상태와 수강 가능한 과정을 확인하세요.</p>
         </div>
 
-        <div class="sidebar-section">
-          <div class="sidebar-label">계정</div>
-          <router-link to="/mypage" class="sidebar-item">
-            <span class="si-icon">👤</span> 마이페이지
-          </router-link>
-          <button class="sidebar-item sidebar-btn" @click="handleLogout">
-            <span class="si-icon">🚪</span> 로그아웃
+        <router-link to="/courses" class="btn btn-secondary">
+          교육과정 둘러보기
+        </router-link>
+      </div>
+
+      <!-- 로딩 -->
+      <div v-if="loading" class="loading-center">
+        <div class="spinner"></div>
+      </div>
+
+      <template v-else>
+        <!-- 상태 필터 -->
+        <div class="segmented">
+          <button
+            v-for="tab in tabs"
+            :key="tab.value"
+            type="button"
+            :class="['segment', { active: selectedTab === tab.value }]"
+            @click="selectedTab = tab.value"
+          >
+            {{ tab.label }} {{ tab.count }}
           </button>
         </div>
-      </aside>
 
-      <main class="main-content">
-        <h1 class="page-title">내 수강 목록</h1>
-
-        <div v-if="loading" class="loading-center">
-          <div class="spinner"></div>
-        </div>
-
-        <div v-else-if="enrollments.length" class="enrollment-list fade-in">
-          <div v-for="item in enrollments" :key="item.id" class="enrollment-card">
-            <div class="enroll-thumb" :class="getThumbBg(item.course?.category)">
-              <img :src="getThumbSrc(item.course)" :alt="item.course?.title" />
-            </div>
-
-            <div class="enroll-info">
-              <span class="badge" :class="getBadge(item.course?.category)">
-                {{ item.course?.category }}
-              </span>
-              <h3 class="enroll-title">{{ item.course?.title }}</h3>
-              <p class="enroll-instructor">강사: {{ item.course?.instructorName }}</p>
-            </div>
-
-            <div class="enroll-status">
-              <span
-                :class="[
-                  'status-badge',
-                  item.status === 'ACTIVE' ? 'status-active' : 'status-pending'
-                ]"
-              >
-                {{ item.status === 'ACTIVE' ? '수강 중' : '대기 중' }}
-              </span>
-              <router-link :to="`/courses/${item.courseId}`" class="btn btn-ghost btn-sm">
-                강의 보기
-              </router-link>
-            </div>
+        <!-- 목록 테이블 -->
+        <section v-if="filteredEnrollments.length" class="panel data-table fade-in">
+          <div class="table-head learning-cols">
+            <span>교육과정</span>
+            <span>분야</span>
+            <span>신청일</span>
+            <span>상태</span>
+            <span>바로가기</span>
           </div>
-        </div>
 
+          <div
+            v-for="item in filteredEnrollments"
+            :key="item.id"
+            class="table-row learning-cols"
+          >
+            <div class="course-cell">
+              <div class="mini-thumb" :class="getThumbBg(item)">
+                <img v-if="getThumbSrc(item)" :src="getThumbSrc(item)" :alt="item.course?.title" />
+              </div>
+              <div>
+                <div class="cell-title">{{ item.course?.title || '삭제된 과정' }}</div>
+                <div class="cell-sub">{{ item.course?.description || 'AI 역량 향상 과정' }}</div>
+              </div>
+            </div>
+
+            <span>{{ getCategoryLabel(item) }}</span>
+            <span>{{ formatDate(item.createdAt) }}</span>
+
+            <span>
+              <span class="badge" :class="item.status === 'ACTIVE' ? 'badge-mint' : 'badge-amber'">
+                {{ item.status === 'ACTIVE' ? '수강 가능' : '승인 대기' }}
+              </span>
+            </span>
+
+            <span>
+              <router-link v-if="item.status === 'ACTIVE'" :to="`/courses/${item.courseId}`" class="link">
+                강의 보기 →
+              </router-link>
+              <span v-else class="cell-sub">승인 후 이용 가능</span>
+            </span>
+          </div>
+        </section>
+
+        <!-- 빈 상태 -->
         <div v-else class="empty-state">
-          <p class="empty-icon">📭</p>
-          <p>수강 중인 강의가 없습니다.</p>
-          <router-link to="/courses" class="btn btn-primary" style="margin-top:16px;">
-            강의 둘러보기
+          <p>{{ selectedTab === '전체' ? '신청한 교육과정이 없습니다.' : '해당 상태의 교육과정이 없습니다.' }}</p>
+          <router-link to="/courses" class="btn btn-primary empty-action-btn">
+            교육과정 둘러보기
           </router-link>
         </div>
-      </main>
-    </div>
+      </template>
+    </main>
   </div>
 </template>
 
@@ -89,44 +95,68 @@ import { useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import { enrollmentApi } from '@/api/enrollment.js'
 import { useAuthStore } from '@/store/auth.js'
+import { useCourseStore } from '@/store/course.js'
 
 const router = useRouter()
 const auth = useAuthStore()
+const courseStore = useCourseStore()
 
 const enrollments = ref([])
 const loading = ref(true)
+const selectedTab = ref('전체')
 
 const isInstructor = computed(() => auth.user?.role === 'INSTRUCTOR')
 
-const categoryConfig = {
-  '백엔드': { bg: 'thumb-teal', badge: 'badge-teal', thumb: 'spring_boot' },
-  '프론트엔드': { bg: 'thumb-teal', badge: 'badge-teal', thumb: 'vue_js' },
-  'DevOps': { bg: 'thumb-blue', badge: 'badge-blue', thumb: 'kubernetes' },
-  '데이터': { bg: 'thumb-purple', badge: 'badge-purple', thumb: 'python' },
-  'AI': { bg: 'thumb-pink', badge: 'badge-pink', thumb: 'generative_ai' },
-}
+const tabs = computed(() => {
+  const pendingCount = enrollments.value.filter(e => e.status !== 'ACTIVE').length
+  const activeCount = enrollments.value.filter(e => e.status === 'ACTIVE').length
 
-function getThumbBg(cat) {
-  return categoryConfig[cat]?.bg || 'thumb-gray'
-}
+  return [
+    { value: '전체', label: '전체', count: enrollments.value.length },
+    { value: '승인 대기', label: '승인 대기', count: pendingCount },
+    { value: '수강 가능', label: '수강 가능', count: activeCount }
+  ]
+})
 
-function getBadge(cat) {
-  return categoryConfig[cat]?.badge || 'badge-gray'
-}
-
-function getThumbSrc(course) {
-  const key = course?.thumbnail || categoryConfig[course?.category]?.thumb
-  if (!key) return ''
-  try {
-    return new URL(`../assets/images/courses/${key}.png`, import.meta.url).href
-  } catch {
-    return ''
+const filteredEnrollments = computed(() => {
+  if (selectedTab.value === '승인 대기') {
+    return enrollments.value.filter(e => e.status !== 'ACTIVE')
   }
+  if (selectedTab.value === '수강 가능') {
+    return enrollments.value.filter(e => e.status === 'ACTIVE')
+  }
+  return enrollments.value
+})
+
+function getCategoryLabel(item) {
+  return courseStore.normalizeCategory(item.course?.category) || '-'
 }
 
-function handleLogout() {
-  auth.logout()
-  router.push('/')
+function getThumbBg(item) {
+  const category = getCategoryLabel(item)
+  const map = {
+    '백엔드': 'thumb-blue',
+    '프론트엔드': 'thumb-lilac',
+    'DevOps': 'thumb-green',
+    '데이터': 'thumb-slate',
+    'AI': 'thumb-violet'
+  }
+  return map[category] || 'thumb-slate'
+}
+
+function getThumbSrc(item) {
+  const category = getCategoryLabel(item)
+  return courseStore.getThumbnail({ ...item.course, category })
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}. ${m}. ${d}`
 }
 
 onMounted(async () => {
@@ -160,210 +190,251 @@ onMounted(async () => {
 <style scoped>
 .page-wrapper {
   min-height: 100vh;
-  background: var(--color-bg-secondary);
+  background:
+    radial-gradient(circle at 80% -10%, rgba(126, 108, 255, 0.08), transparent 30%),
+    radial-gradient(circle at 0% 80%, rgba(84, 215, 180, 0.05), transparent 28%),
+    var(--sf-canvas);
 }
 
-.page-layout {
-  max-width: 1200px;
+.page {
+  padding: 48px 0 72px;
+}
+
+.shell {
+  max-width: var(--sf-shell);
   margin: 0 auto;
-  padding: 32px 24px;
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 28px;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 8px;
-}
-
-.sidebar-label {
-  font-size: 10px;
-  font-weight: 600;
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--sf-indigo);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
-  padding: 8px 12px 4px;
 }
 
-.sidebar-item {
+.title-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  transition: var(--transition);
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  text-decoration: none;
-}
-
-.sidebar-item:hover {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-}
-
-.sidebar-item.active {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-weight: 500;
-}
-
-.si-icon {
-  font-size: 15px;
-}
-
-.main-content {
-  min-width: 0;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
 .page-title {
-  font-size: 22px;
-  font-weight: 700;
+  margin: 0;
+  font-size: 38px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--sf-ink);
+}
+
+.page-desc {
+  margin: 12px 0 0;
+  color: var(--sf-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.btn {
+  height: 44px;
+  padding: 0 19px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 750;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--sf-indigo), #6d52ef);
+  box-shadow: 0 10px 24px rgba(91, 80, 230, 0.22);
+}
+
+.btn-secondary {
+  color: var(--sf-indigo-dark);
+  border-color: rgba(91, 80, 230, 0.22);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* 상태 필터 */
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--sf-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.64);
   margin-bottom: 24px;
 }
 
-.enrollment-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.enrollment-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 16px;
+.segment {
+  height: 33px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sf-muted);
+  font-size: 12px;
+  font-weight: 750;
   transition: var(--transition);
 }
 
-.enrollment-card:hover {
-  box-shadow: var(--shadow-sm);
+.segment.active {
+  color: var(--sf-indigo-dark);
+  background: white;
+  box-shadow: 0 2px 8px rgba(16, 19, 35, 0.07);
 }
 
-.enroll-thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+/* 테이블 */
+.panel {
+  background: #ffffff;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  box-shadow: var(--sf-shadow-sm);
+}
+
+.data-table {
   overflow: hidden;
 }
 
-.enroll-thumb img {
+.table-head,
+.table-row {
+  display: grid;
+  align-items: center;
+  padding: 0 22px;
+}
+
+.table-head {
+  height: 45px;
+  color: var(--sf-subtle);
+  background: #f8f9fc;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.table-row {
+  min-height: 78px;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 13px;
+  color: var(--sf-ink);
+}
+
+.table-row:last-child {
+  border-bottom: 0;
+}
+
+.learning-cols {
+  grid-template-columns: 2.2fr 0.8fr 0.85fr 0.8fr 0.75fr;
+}
+
+.course-cell {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.mini-thumb {
+  width: 72px;
+  height: 46px;
+  border-radius: 11px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-thumb img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 8px;
+  padding: 6px;
 }
 
-.thumb-teal {
-  background: #E1F5EE;
-}
+.thumb-blue   { background: linear-gradient(135deg, #dfe8fa, #eaf0fa 55%, #b8ccf3); }
+.thumb-violet { background: linear-gradient(135deg, #eee8ff, #d9cdfa 55%, #b9a5ee); }
+.thumb-green  { background: linear-gradient(135deg, #dfeee9, #c6dfd6 55%, #8ab9a8); }
+.thumb-slate  { background: linear-gradient(135deg, #e6e9ef, #c9d0dc 55%, #9ca9bc); }
+.thumb-lilac  { background: linear-gradient(135deg, #f0edff, #ded8ff 55%, #b9adf5); }
 
-.thumb-blue {
-  background: #E6F1FB;
-}
-
-.thumb-purple {
-  background: #EEEDFE;
-}
-
-.thumb-pink {
-  background: #FBEAF0;
-}
-
-.thumb-gray {
-  background: #F1EFE8;
-}
-
-.enroll-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.enroll-title {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.enroll-instructor {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.enroll-status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-active {
-  background: #E1F5EE;
-  color: #0F6E56;
-}
-
-.status-pending {
-  background: #FAEEDA;
-  color: #854F0B;
-}
-
-.btn-sm {
-  padding: 7px 14px;
+.cell-title {
+  font-weight: 750;
   font-size: 13px;
 }
 
+.cell-sub {
+  margin-top: 4px;
+  color: var(--sf-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.badge-mint {
+  color: #087858;
+  background: var(--sf-success-bg);
+}
+
+.badge-amber {
+  color: #ad5e00;
+  background: var(--sf-pending-bg);
+}
+
+.link {
+  color: var(--sf-indigo);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+/* 빈 상태 */
 .empty-state {
   text-align: center;
   padding: 80px 0;
-  color: var(--color-text-muted);
+  color: var(--sf-muted);
+  font-size: 15px;
 }
 
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
+.empty-action-btn {
+  display: inline-flex;
+  margin-top: 16px;
 }
 
+/* 로딩 */
 .loading-center {
   display: flex;
   justify-content: center;
-  padding: 80px 0;
+  padding: 120px 0;
 }
 
 .spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--sf-border);
+  border-top-color: var(--sf-indigo);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -371,6 +442,23 @@ onMounted(async () => {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .learning-cols {
+    grid-template-columns: 2fr 1fr;
+    row-gap: 6px;
+  }
+
+  .table-head {
+    display: none;
+  }
+
+  .table-row {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 8px;
   }
 }
 </style>
