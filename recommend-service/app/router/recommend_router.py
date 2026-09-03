@@ -14,8 +14,8 @@ async def get_employee_profile(
     user_id: int,
     token_payload: dict = Depends(verify_token),
 ):
-    """직원의 더미 직무·현재 역량·부족 역량 조회."""
-    profile = recommend_service.get_employee_profile(user_id)
+    """직원의 직무·현재 역량·부족 역량 조회 (user-service DB 기반)."""
+    profile = await recommend_service.get_employee_profile(user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="직원 역량 프로필이 없습니다.")
     return profile

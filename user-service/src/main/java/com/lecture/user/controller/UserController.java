@@ -56,4 +56,13 @@ public class UserController {
         UserDto.UserResponse response = userService.getUserById(id);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * GET /users/internal/{id}/competency-profile - 직원 역량 프로필 (recommend-service 내부 호출용)
+     * 백엔드추천 api명세서 §3 계약. 공통 래퍼 없이 직접 반환.
+     */
+    @GetMapping("/internal/{id}/competency-profile")
+    public ResponseEntity<UserDto.CompetencyProfileResponse> getCompetencyProfileInternal(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getCompetencyProfile(id));
+    }
 }

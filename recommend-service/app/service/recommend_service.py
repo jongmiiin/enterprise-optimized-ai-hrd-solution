@@ -2,9 +2,9 @@ import logging
 
 from app.client.course_client import course_client
 from app.client.enrollment_client import enrollment_client
+from app.client.user_client import user_client
 from app.data.mock_data import (
     COURSE_COMPETENCY_MAP,
-    EMPLOYEE_PROFILES,
     JOB_REQUIREMENTS,
     PROFILE_LEARNING_PATHS,
 )
@@ -25,7 +25,8 @@ class RecommendService:
     async def get_recommendations(self, user_id: int) -> RecommendResponse:
         logger.info(f"[RecommendService] 추천 시작 - userId: {user_id}")
 
-        profile = EMPLOYEE_PROFILES.get(user_id)
+        # mock_data 대신 user-service DB 프로필 조회 (백엔드추천 api명세서 §3)
+        profile = await user_client.get_competency_profile(user_id)
         if not profile:
             return await self._recommend_for_unknown_user(user_id)
 
@@ -88,8 +89,9 @@ class RecommendService:
             message=f"{profile['name']}님의 현재 역량과 희망 방향을 반영한 맞춤 강의입니다.",
         )
 
-    def get_employee_profile(self, user_id: int) -> EmployeeProfileResponse | None:
-        profile = EMPLOYEE_PROFILES.get(user_id)
+    async def get_employee_profile(self, user_id: int) -> EmployeeProfileResponse | None:
+        # mock_data 대신 user-service DB 프로필 조회
+        profile = await user_client.get_competency_profile(user_id)
         if not profile:
             return None
         required = JOB_REQUIREMENTS[profile["job"]]

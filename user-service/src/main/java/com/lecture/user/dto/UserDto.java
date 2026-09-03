@@ -56,6 +56,37 @@ public class UserDto {
         }
     }
 
+    // 역량 프로필 응답 (recommend-service 내부 호출용 — 백엔드추천 api명세서 §3)
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CompetencyProfileResponse {
+        private Long userId;
+        private String employeeCode;
+        private String name;
+        private String job;
+        private String jobLabel;
+        private String overallLevel;
+        private String careerGoal;
+        private java.util.Map<String, Integer> competencyScores;
+        private java.util.Map<String, Integer> skills;
+
+        public static CompetencyProfileResponse from(User user) {
+            return CompetencyProfileResponse.builder()
+                    .userId(user.getId())
+                    .employeeCode(user.getEmployeeCode())
+                    .name(user.getName())
+                    .job(user.getJob())
+                    .jobLabel(user.getJobLabel())
+                    .overallLevel(user.getOverallLevel())
+                    .careerGoal(user.getCareerGoal())
+                    .competencyScores(user.getCompetencyScores())
+                    .skills(user.getSkills())
+                    .build();
+        }
+    }
+
     // 공통 API 응답 래퍼
     @Getter
     @NoArgsConstructor

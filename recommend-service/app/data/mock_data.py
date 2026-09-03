@@ -5,6 +5,10 @@
 ID는 init-db/02_skillfit_seed.sql과 일치한다.
 """
 
+# [DEPRECATED] user-service의 DB 기반 competency-profile API로 대체됨.
+# recommend_service는 더 이상 이 딕셔너리를 import/사용하지 않는다.
+# (백엔드추천 api명세서 §8: mock_data와 User 기반 로직을 동시에 사용하지 않는다)
+# 값은 user-service UserDataInitializer가 DB에 동일하게 시드하므로 참고용으로만 남긴다.
 EMPLOYEE_PROFILES = {
     10001: {
         "employeeCode": "skala1",

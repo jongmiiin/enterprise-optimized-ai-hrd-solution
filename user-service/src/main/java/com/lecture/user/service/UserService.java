@@ -48,6 +48,15 @@ public class UserService {
     }
 
     /**
+     * 직원 역량 프로필 조회 (recommend-service 내부 호출용 — 백엔드추천 api명세서 §3)
+     */
+    public UserDto.CompetencyProfileResponse getCompetencyProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        return UserDto.CompetencyProfileResponse.from(user);
+    }
+
+    /**
      * 이메일로 사용자 조회 (서비스 간 내부 호출용)
      */
     public UserDto.UserResponse getUserByEmail(String email) {
