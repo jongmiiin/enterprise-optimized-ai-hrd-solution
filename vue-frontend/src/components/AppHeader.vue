@@ -3,8 +3,8 @@
     <div class="header-inner">
       <!-- 로고 -->
       <router-link to="/" class="logo">
-        <img src="@/assets/images/logo/main_logo.png" alt="SkillFit AI" class="logo-img" />
-        <span class="logo-text">SkillFit AI</span>
+        <img src="@/assets/images/logo/main_logo.png" alt="SkillFit" class="logo-img" />
+        <span class="logo-text">SkillFit</span>
       </router-link>
 
       <!-- 네비게이션 -->
